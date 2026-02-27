@@ -1,0 +1,55 @@
+version = 1
+revision = 3
+requires-python = ">=3.10"
+
+[[package]]
+name = "ece552"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "prettyerr" },
+    { name = "pyslang" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "prettyerr", specifier = ">=0.0.0" },
+    { name = "pyslang", specifier = ">=9.1.0" },
+]
+
+[[package]]
+name = "prettyerr"
+version = "0.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/9c/f8/da9ecc7dad3219577b213818f0a6357c67d849ff921be10d8a2e7b4207e6/prettyerr-0.0.0.tar.gz", hash = "sha256:6923a0e1f2b64822d579b70005d78ddc455a07a923ad15f5a79dbb9143bc58ba", size = 22369, upload-time = "2025-11-17T05:54:23.746Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9b/12/f516234ac58b795f704bd84fb45744922a1fc3cb23749f1f3c7d89df7ea4/prettyerr-0.0.0-py3-none-any.whl", hash = "sha256:f85b2df0dae6d28426786a6c5bb8c50cd9c70e3d08943b31b511774d42ffe1c0", size = 9908, upload-time = "2025-11-17T05:54:22.511Z" },
+]
+
+[[package]]
+name = "pyslang"
+version = "9.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/b6/1e/d43f7dcbaf7f73c522bd8e27914924b050ba371610ca09c1e31883161a1d/pyslang-9.1.0.tar.gz", hash = "sha256:78f3d949eb40cc963b21992c57c65a0be3d3c9147ea4e8607737bc7042fb1a88", size = 1682499, upload-time = "2025-09-26T12:37:58.471Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5a/36/91fe476fe89d99c17946e616db7c92e92f286793f017b8365fd39c92ff3d/pyslang-9.1.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:f78845d2e9a0a619116b14098cbbae561c08b7dee1d680ac486c0ff6f0147c62", size = 3045695, upload-time = "2025-09-26T12:37:18.267Z" },
+    { url = "https://files.pythonhosted.org/packages/23/1e/98fd80d6fd5838a53e37d53e0c840309607c6e79e8c5a38d864be21c3a14/pyslang-9.1.0-cp310-cp310-macosx_11_0_universal2.whl", hash = "sha256:c2a74be43c7f9e6850e00750d08a48ef06eec4c7bdbf06b04b652fcc55a20ca6", size = 6346797, upload-time = "2025-09-26T12:37:19.929Z" },
+    { url = "https://files.pythonhosted.org/packages/f5/96/ba04e425c69a776908ce3a9302104e69605ff9299a3b6764a4dc23c51e16/pyslang-9.1.0-cp310-cp310-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:b2956e4267b308a86c28dc7f1916ece5008b25c062dc559b680b57629eb84560", size = 3872235, upload-time = "2025-09-26T12:37:21.434Z" },
+    { url = "https://files.pythonhosted.org/packages/4a/bd/9bb9e061be6cf2c809b5613906957ed1f3cf927a871fb2d523f544415d0c/pyslang-9.1.0-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:60382612f33812bded97fc84372d0c00d568b9db6a0644e1d648b60598956be0", size = 4354417, upload-time = "2025-09-26T12:37:23.149Z" },
+    { url = "https://files.pythonhosted.org/packages/53/69/ad9e16d9e0aa0fa929058fc19b80051fcfdc56f34d278cf7dd341891fb64/pyslang-9.1.0-cp310-cp310-win_amd64.whl", hash = "sha256:85d90cea9f933709929794ad854e6040f9dc878f7d7ba4a396be0f080f958b04", size = 2610759, upload-time = "2025-09-26T12:37:24.953Z" },
+    { url = "https://files.pythonhosted.org/packages/39/ce/bb197e9e6cb34c203a28c1158a252da6513e7cacc148f815d91bd052a402/pyslang-9.1.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:d5948244721c335110cc0aafe5d6db08ce4c1139fa45a5c484189f9c5a9b8e1b", size = 3049592, upload-time = "2025-09-26T12:37:26.305Z" },
+    { url = "https://files.pythonhosted.org/packages/c9/e9/ee99935ccc32a307acd1283559e031ff750bb926bc1a150b68bbaaa0ab4e/pyslang-9.1.0-cp311-cp311-macosx_11_0_universal2.whl", hash = "sha256:5caa4872972a42e97c58cd9abe97d5ebbec0f1e98015fc63db97e4b6427a377d", size = 6351494, upload-time = "2025-09-26T12:37:28.101Z" },
+    { url = "https://files.pythonhosted.org/packages/83/84/2fbb454491bd545560bfe1b1a6d9555d8b8a25991593df75129a9f75ee8b/pyslang-9.1.0-cp311-cp311-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:016599a7c9db562ab62f56ce337d63227e9b385ce586efa3371dd8bc0133e55a", size = 3875514, upload-time = "2025-09-26T12:37:29.83Z" },
+    { url = "https://files.pythonhosted.org/packages/c9/2d/ae59b949a3a2fbafc6c77fee9a472f2357c7b3e008838a403d9e49802b34/pyslang-9.1.0-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:6d8f43d40b60f6d63a6606ada14e46af89322f74f379c50ef0a19243adcff605", size = 4356550, upload-time = "2025-09-26T12:37:31.269Z" },
+    { url = "https://files.pythonhosted.org/packages/c3/a7/cf82ce72c571bfd342ce23de447fa2a4de4d2f6ab5738cab5717956d5b2a/pyslang-9.1.0-cp311-cp311-win_amd64.whl", hash = "sha256:d1fb873fdf606f26efa50e4fdcb0f453910bea40f29adf95a681135738d88919", size = 2611971, upload-time = "2025-09-26T12:37:32.939Z" },
+    { url = "https://files.pythonhosted.org/packages/f7/58/75956b5d5e53de88e99f5177ca22edc15a4403fc078bee32f9d6ef9e5b00/pyslang-9.1.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:5f1d051b2e0febde9c4a267db15797d0dad48893cc77d1cf36aa096f1bb17755", size = 3061682, upload-time = "2025-09-26T12:37:34.274Z" },
+    { url = "https://files.pythonhosted.org/packages/0b/31/e732335285cb07fb956dbc113ac2ae9a88381d5e6431eb6e4314a6f71943/pyslang-9.1.0-cp312-cp312-macosx_11_0_universal2.whl", hash = "sha256:b83b28682a5a389bd3636b6eed4b34a8581b7aa484e7e8e5f20a0cd13c185869", size = 6413960, upload-time = "2025-09-26T12:37:35.925Z" },
+    { url = "https://files.pythonhosted.org/packages/7d/83/d6371f346e0e2d2e515462e5ea84897bf328b2cd54fb8ce92636ba8141c3/pyslang-9.1.0-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:805813aa61d8a6a543314456f0254c9cb606eb6fce59b24b24c7814eeb2c52a2", size = 3871557, upload-time = "2025-09-26T12:37:37.778Z" },
+    { url = "https://files.pythonhosted.org/packages/f6/c7/8db7b196f781b5980a59367a71b858cdce6dc9b187410ef12190ee8cc4b7/pyslang-9.1.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:ca0de90e61b2e1a535a3f7ef11f621fe338910207d86c6536712dd802fbe8768", size = 4349743, upload-time = "2025-09-26T12:37:39.652Z" },
+    { url = "https://files.pythonhosted.org/packages/d7/a1/cbddee4df97ac5ff83fb67078e80ab26e736a514da2e181fbfab1fc22f0a/pyslang-9.1.0-cp312-cp312-win_amd64.whl", hash = "sha256:595396530a28498632c465c94d942282ce7dfd288e461cddf4dba640af10e739", size = 2621302, upload-time = "2025-09-26T12:37:41.308Z" },
+    { url = "https://files.pythonhosted.org/packages/07/fd/195d021c340728d594ca485689be5bef91e499e8e48380ffae467dae4c32/pyslang-9.1.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:0dd76a6d153ce308eb1525e7e893eb36c4e1ec2f1fa7bac36147cb99cee78daa", size = 3061758, upload-time = "2025-09-26T12:37:42.786Z" },
+    { url = "https://files.pythonhosted.org/packages/96/11/d3c9ba6b2b24658b818286eb458a6b946e85c1d7c702639ec54046ddd3f5/pyslang-9.1.0-cp313-cp313-macosx_11_0_universal2.whl", hash = "sha256:f57e56c4a3600108b505f425412da711b5b6f36dbbccd68b5e0f07633787fc68", size = 6414184, upload-time = "2025-09-26T12:37:44.613Z" },
+    { url = "https://files.pythonhosted.org/packages/0a/c7/bbe5591a2b03c9b14e67c7762772d358c151b4c5310f94ef198417c0ffcc/pyslang-9.1.0-cp313-cp313-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:cecc3aa795efb71b14525b0111bbb0f0413b03dfcd6cf7266be1524fa9a51eff", size = 3871680, upload-time = "2025-09-26T12:37:46.054Z" },
+    { url = "https://files.pythonhosted.org/packages/d7/45/12063139410c4c533cb1d17ebad561d3213ddc3620a0247c84b3fbd1892b/pyslang-9.1.0-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:f252c10f16d291f30c6ac5d13b20377b7d62b753102da8dc6a8cc079b79e42ee", size = 4347433, upload-time = "2025-09-26T12:37:47.366Z" },
+    { url = "https://files.pythonhosted.org/packages/41/96/d42053cc80f4c372b59da48d42997114093c5a87980dbf293b99f60fe8fc/pyslang-9.1.0-cp313-cp313-win_amd64.whl", hash = "sha256:0135d2387d936ae46990a42883606d1043ee588c1688d3fab54cff7f3819cba3", size = 2621058, upload-time = "2025-09-26T12:37:48.792Z" },
+]
