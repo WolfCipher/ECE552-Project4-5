@@ -1,0 +1,22 @@
+C:/Users/minec/Pictures/Documents/UW/ECE552/ECE552Project3/project3/rtl/fetch.v {1 {vlog -work work -stats=none C:/Users/minec/Pictures/Documents/UW/ECE552/ECE552Project3/project3/rtl/fetch.v
+Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 28 2020
+-- Compiling module fetch
+
+Top level modules:
+	fetch
+
+} {} {}} C:/Users/minec/Pictures/Documents/UW/ECE552/ECE552Project3/project3/tb/tb.v {1 {vlog -work work -stats=none C:/Users/minec/Pictures/Documents/UW/ECE552/ECE552Project3/project3/tb/tb.v
+Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 28 2020
+-- Compiling module hart_tb
+
+Top level modules:
+	hart_tb
+
+} {} {}} C:/Users/minec/Pictures/Documents/UW/ECE552/ECE552Project3/project2/rf.v {1 {vlog -work work -stats=none C:/Users/minec/Pictures/Documents/UW/ECE552/ECE552Project3/project2/rf.v
+Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 28 2020
+-- Compiling module rf
+
+Top level modules:
+	rf
+
+} {} {}}
