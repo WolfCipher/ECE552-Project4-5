@@ -130,7 +130,183 @@ module hart #(
     ,`RVFI_OUTPUTS,
 `endif
 );
-    // Fill in your implementation here.
+
+    // PC signals
+    wire [31:0] PC_F_D, PC_D_X, PC_X_M, PC_M_W; // before adding 4
+    wire [31:0] PC4_D_X, PC4_X_M, PC4_M_W; // after adding 4
+    wire [31:0] target_addr_X_M; // PC + target_addr
+    wire [31:0] next_PC_M_W, next_PC_W_F; // output of branch/jump logic
+
+    // Mux Signals
+    wire isJALR_D_X, isJALR_X_M;
+    wire Jump_D_X, Jump_X_M, Jump_M_W;
+    wire BranchEqual_D_X, BranchEqual_X_M;
+    wire BranchLT_D_X, BranchLT_X_M;
+    wire Branch_D_X, Branch_X_M;
+    wire MemRead_D_X, MemRead_X_M; // TODO: replace last signal with o_dmem_ren
+    wire MemtoReg_D_X, MemtoReg_X_M, MemtoReg_M_W;
+    wire MemWrite_D_X; //MemWrite_X_M; // TODO: replace last signal with o_dmem_wen
+    wire RegWrite_D_X, RegWrite_X_M, RegWrite_M_W;
+    wire UpperType_D_X;
+    wire IsUInstruct_D_X, IsUInstruct_X_M, IsUInstruct_M_W;
+    wire ALUSrc_D_X;
+
+    // Destination Address
+    wire [4:0] rd_waddr_D_X, rd_waddr_X_M, rd_waddr_M_W;
+
+    // register access signals
+    wire i_reg_write_en, wb_en;
+    wire [4:0] i_reg_write_addr, wb_addr;
+    wire [31:0] i_reg_write_data, wb_data;
+    wire [4:0] rs1_raddr, rs2_raddr;
+
+    assign i_reg_write_en = wb_en;
+    assign i_reg_write_addr = wb_addr;
+    assign i_reg_write_data = wb_data;
+
+    // ALU result, U type result, memory result
+    wire [31:0] ALU_X_M, ALU_M_W;
+    wire [31:0] uimm_X_M, uimm_M_W;
+    wire [31:0] mem_read_M_W; // TODO replace with i_dem_rdata
+
+    // Signals just between decode and execute stages
+    wire [31:0] reg1, reg2, imm;
+    wire [2:0] funct3, i_opsel;
+    wire i_sub, i_unsigned, i_arith;
+
+    // Signals just between execute and memory
+    wire eq, slt, mem_unsigned;
+    wire [31:0] mem_addr, reg2_X_M; // TODO replace with o_dem_addr, o_dem_wdata
+    assign mem_addr = o_dmem_addr;
+
+    // **** HANDLE RETIRE *******
+    // for single-cycle implementations, o_retire_valid will always be 1
+    assign o_retire_valid = 1;
+    // check for traps in stages where we can find a bad instruction and bad addresses
+    wire trap_D, trap_X;
+    assign o_retire_trap = trap_D | trap_X;
+    // retired instruction pc
+    assign o_retire_next_pc = next_PC_W_F;
+    // register addresses
+    assign o_retire_rs1_raddr = rs1_raddr;
+    assign o_retire_rs2_raddr = rs2_raddr;
+    //assign o_retire_rd_waddr = i_reg_write_addr;
+    //assign o_retire_rd_wdata = i_reg_write_data;
+    assign o_retire_rd_waddr = wb_en ? wb_addr : 5'd0;
+    assign o_retire_rd_wdata =
+        (wb_en && wb_addr != 5'd0)
+            ? wb_data
+            : 32'd0;
+
+
+    // TODO take action if the retired instruction is valid
+    // wire next_pc;
+    // assign next_pc = o_retire_valid ? o_retire_next_pc : 32'd0; // TODO: what should default value be?
+
+    // Additional wires
+    wire [31:0] instruction;    // never declared
+
+    rf #(0) reg_file (
+        i_clk, i_rst,
+        // Register read port 1, with input address [0, 31] and output data.
+        rs1_raddr, reg1,
+        // Register read port 2, with input address [0, 31] and output data.
+        rs2_raddr, reg2,
+        // Write register enable, address [0, 31] and input data.
+        i_reg_write_en, i_reg_write_addr, i_reg_write_data
+    );
+
+    // ***** BUILD CONNECTIONS *****
+    fetch #(RESET_ADDR) fetch_inst (
+        i_rst,
+        i_clk,
+        i_imem_rdata,
+        next_PC_W_F,
+        o_imem_raddr,
+        PC_F_D,
+        instruction
+    );
+
+
+    decode d (
+        i_imem_rdata,
+        // output mux values
+        Jump_D_X, BranchEqual_D_X, BranchLT_D_X, Branch_D_X,
+        MemRead_D_X, MemWrite_D_X, MemtoReg_D_X,
+        ALUSrc_D_X, //1 if reg 0 if imm
+        RegWrite_D_X, IsUInstruct_D_X, UpperType_D_X, isJALR_D_X,
+        // register and immediate values
+        reg1, reg2, imm,
+        // ALU values
+        funct3, i_opsel, i_sub, i_unsigned, i_arith,
+        // Register accesses
+        rs1_raddr, rs2_raddr, rd_waddr_D_X,
+        // Retire instructions
+        o_retire_halt, o_retire_inst, trap_D,
+        o_retire_rs1_rdata, o_retire_rs2_rdata,
+        //o_retire_rd_waddr, o_retire_rd_wdata,
+        // PC
+        PC_F_D, PC_D_X, PC4_D_X
+    );
+
+    execute x (
+        // ALU inputs
+        reg1, reg2, imm, funct3, i_opsel, i_sub, i_unsigned, i_arith,
+        // signals related to PC, branch, and ALU
+        PC_D_X, PC4_D_X, ALU_X_M, eq, slt, target_addr_X_M, PC_X_M, PC4_X_M,
+        // signals for proper memory access
+        mem_unsigned, o_dmem_mask, o_dmem_addr, o_dmem_wdata, reg2_X_M,
+        // input mux signals
+        ALUSrc_D_X, isJALR_D_X, Jump_D_X, BranchEqual_D_X, BranchLT_D_X, Branch_D_X,
+        MemRead_D_X, MemtoReg_D_X, MemWrite_D_X, rd_waddr_D_X,
+        RegWrite_D_X, UpperType_D_X, IsUInstruct_D_X,
+        // output mux signals
+        isJALR_X_M, Jump_X_M, BranchEqual_X_M, BranchLT_X_M, Branch_X_M,
+        MemRead_X_M, MemtoReg_X_M, o_dmem_wen,
+        rd_waddr_X_M, RegWrite_X_M, IsUInstruct_X_M,
+        // U type result
+        uimm_X_M,
+        // trap check
+        trap_X
+    );
+
+    memory m (
+        // signals sent to data memory
+        i_clk, o_dmem_mask, mem_unsigned, mem_addr, reg2_X_M,
+        // ALU signal
+        ALU_X_M,
+        // Branch and PC signals
+        eq, slt, target_addr_X_M, PC_X_M, PC4_X_M, PC_M_W, next_PC_M_W,
+        // Results to choose between in WB stage
+        mem_read_M_W, ALU_M_W, uimm_M_W,
+        // input Mux signals
+        isJALR_X_M, Jump_X_M, BranchEqual_X_M, BranchLT_X_M, Branch_X_M,
+        MemRead_X_M, MemtoReg_X_M, //MemWrite_X_M,
+        rd_waddr_X_M, RegWrite_X_M, IsUInstruct_X_M,
+        uimm_X_M,
+        // output Mux signals
+        Jump_M_W, MemtoReg_M_W, rd_waddr_M_W, RegWrite_M_W, IsUInstruct_M_W,
+        // dmem
+        i_dmem_rdata, o_dmem_ren
+    );
+
+
+    writeback w (
+        PC_M_W,
+        next_PC_M_W,
+        // results to choose between
+        mem_read_M_W, ALU_M_W, uimm_M_W,
+        wb_data,
+        o_retire_pc,
+        next_PC_W_F,
+        // input mux signals
+        Jump_M_W, MemtoReg_M_W, rd_waddr_M_W,
+        RegWrite_M_W, IsUInstruct_M_W,
+        // output signals
+        wb_en,
+        wb_addr
+    );
+
 endmodule
 
 `default_nettype wire
