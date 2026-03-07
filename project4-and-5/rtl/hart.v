@@ -132,27 +132,27 @@ module hart #(
 );
 
     // PC signals
-    wire [31:0] PC_F_D, PC_D_X, PC_X_M, PC_M_W; // before adding 4
-    wire [31:0] PC4_D_X, PC4_X_M, PC4_M_W; // after adding 4
-    wire [31:0] target_addr_X_M; // PC + target_addr
-    wire [31:0] next_PC_M_W, next_PC_W_F; // output of branch/jump logic
+    reg [31:0] PC_F_D, PC_D_X, PC_X_M, PC_M_W; // before adding 4
+    reg [31:0] PC4_D_X, PC4_X_M, PC4_M_W; // after adding 4
+    reg [31:0] target_addr_X_M; // PC + target_addr
+    reg [31:0] next_PC_M_W, next_PC_W_F; // output of branch/jump logic
 
     // Mux Signals
-    wire isJALR_D_X, isJALR_X_M;
-    wire Jump_D_X, Jump_X_M, Jump_M_W;
-    wire BranchEqual_D_X, BranchEqual_X_M;
-    wire BranchLT_D_X, BranchLT_X_M;
-    wire Branch_D_X, Branch_X_M;
-    wire MemRead_D_X, MemRead_X_M; // TODO: replace last signal with o_dmem_ren
-    wire MemtoReg_D_X, MemtoReg_X_M, MemtoReg_M_W;
-    wire MemWrite_D_X; //MemWrite_X_M; // TODO: replace last signal with o_dmem_wen
-    wire RegWrite_D_X, RegWrite_X_M, RegWrite_M_W;
-    wire UpperType_D_X;
-    wire IsUInstruct_D_X, IsUInstruct_X_M, IsUInstruct_M_W;
-    wire ALUSrc_D_X;
+    reg isJALR_D_X, isJALR_X_M;
+    reg Jump_D_X, Jump_X_M, Jump_M_W;
+    reg BranchEqual_D_X, BranchEqual_X_M;
+    reg BranchLT_D_X, BranchLT_X_M;
+    reg Branch_D_X, Branch_X_M;
+    reg MemRead_D_X, MemRead_X_M; // TODO: replace last signal with o_dmem_ren
+    reg MemtoReg_D_X, MemtoReg_X_M, MemtoReg_M_W;
+    reg MemWrite_D_X; //MemWrite_X_M; // TODO: replace last signal with o_dmem_wen
+    reg RegWrite_D_X, RegWrite_X_M, RegWrite_M_W;
+    reg UpperType_D_X;
+    reg IsUInstruct_D_X, IsUInstruct_X_M, IsUInstruct_M_W;
+    reg ALUSrc_D_X;
 
     // Destination Address
-    wire [4:0] rd_waddr_D_X, rd_waddr_X_M, rd_waddr_M_W;
+    reg [4:0] rd_waddr_D_X, rd_waddr_X_M, rd_waddr_M_W;
 
     // register access signals
     wire i_reg_write_en, wb_en;
@@ -165,19 +165,23 @@ module hart #(
     assign i_reg_write_data = wb_data;
 
     // ALU result, U type result, memory result
-    wire [31:0] ALU_X_M, ALU_M_W;
-    wire [31:0] uimm_X_M, uimm_M_W;
-    wire [31:0] mem_read_M_W; // TODO replace with i_dem_rdata
+    reg [31:0] ALU_X_M, ALU_M_W;
+    reg [31:0] uimm_X_M, uimm_M_W;
+    reg [31:0] mem_read_M_W; // TODO replace with i_dem_rdata
 
     // Signals just between decode and execute stages
-    wire [31:0] reg1, reg2, imm;
-    wire [2:0] funct3, i_opsel;
-    wire i_sub, i_unsigned, i_arith;
+    reg [31:0] reg1, reg2, imm;
+    reg [2:0] funct3, i_opsel;
+    reg i_sub, i_unsigned, i_arith;
 
     // Signals just between execute and memory
-    wire eq, slt, mem_unsigned;
-    wire [31:0] mem_addr, reg2_X_M; // TODO replace with o_dem_addr, o_dem_wdata
-    assign mem_addr = o_dmem_addr;
+    reg eq, slt, mem_unsigned;
+    reg [31:0] dmem_addr, reg2_X_M; // TODO replace with o_dem_addr, o_dem_wdata
+    reg [3:0] dmem_mask;
+    always @(posedge i_clk) begin
+        dmem_addr <= o_dmem_addr;
+        dmem_mask <= o_dmem_mask;
+    end
 
     // **** HANDLE RETIRE *******
     // for single-cycle implementations, o_retire_valid will always be 1
@@ -204,7 +208,7 @@ module hart #(
     // assign next_pc = o_retire_valid ? o_retire_next_pc : 32'd0; // TODO: what should default value be?
 
     // Additional wires
-    wire [31:0] instruction;    // never declared
+    reg [31:0] instruction;    // never declared
 
     rf #(0) reg_file (
         i_clk, i_rst,
@@ -229,6 +233,7 @@ module hart #(
 
 
     decode d (
+        i_clk,
         i_imem_rdata,
         // output mux values
         Jump_D_X, BranchEqual_D_X, BranchLT_D_X, Branch_D_X,
@@ -250,6 +255,7 @@ module hart #(
     );
 
     execute x (
+        i_clk,
         // ALU inputs
         reg1, reg2, imm, funct3, i_opsel, i_sub, i_unsigned, i_arith,
         // signals related to PC, branch, and ALU
@@ -271,8 +277,9 @@ module hart #(
     );
 
     memory m (
+        i_clk,
         // signals sent to data memory
-        i_clk, o_dmem_mask, mem_unsigned, mem_addr, reg2_X_M,
+        dmem_mask, mem_unsigned, dmem_addr, reg2_X_M,
         // ALU signal
         ALU_X_M,
         // Branch and PC signals
@@ -292,6 +299,7 @@ module hart #(
 
 
     writeback w (
+        i_clk,
         PC_M_W,
         next_PC_M_W,
         // results to choose between

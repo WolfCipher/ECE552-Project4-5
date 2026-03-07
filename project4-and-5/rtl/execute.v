@@ -1,58 +1,59 @@
 // alu, branch/jump update
 // DOES choose between immediate and register 2
 module execute(
+    input wire i_clk,
     // ALU inputs
-    input wire [31:0] reg1,
-    input wire [31:0] reg2,
-    input wire [31:0] imm,
-    input wire [2:0] funct3,
-    input wire [2:0] i_opsel,
-    input wire i_sub,
-    input wire i_unsigned,
-    input wire i_arith,
+    input reg [31:0] reg1,
+    input reg [31:0] reg2,
+    input reg [31:0] imm,
+    input reg [2:0] funct3,
+    input reg [2:0] i_opsel,
+    input reg i_sub,
+    input reg i_unsigned,
+    input reg i_arith,
     // signals related to PC, branch, and ALU
-    input wire [31:0] i_PC,
-    input wire [31:0] i_PC4,
-    output wire [31:0] o_result,
-    output wire o_eq,
-    output wire o_slt,
-    output wire [31:0] target_addr,
-    output wire [31:0] o_PC,
-    output wire [31:0] o_PC4,
+    input reg [31:0] i_PC,
+    input reg [31:0] i_PC4,
+    output reg [31:0] o_result,
+    output reg o_eq,
+    output reg o_slt,
+    output reg [31:0] target_addr,
+    output reg [31:0] o_PC,
+    output reg [31:0] o_PC4,
     // signals for proper memory access
-    output wire o_unsigned, // for memory
+    output reg o_unsigned, // for memory
     output wire [3:0] o_mask, // for memory
     output wire [31:0] mem_addr, // for memory; different from o_result if not working with a word
     output wire [31:0] mem_wdata,
-    output wire [31:0] o_reg2,
+    output reg [31:0] o_reg2,
     // input mux signals
-    input wire i_ALUSrc,
-    input wire i_isJALR,
-    input wire i_Jump,
-    input wire i_BranchEqual,
-    input wire i_BranchLT,
-    input wire i_Branch,
-    input wire i_MemRead,
-    input wire i_MemtoReg,
-    input wire i_MemWrite,
-    input wire [4:0] i_rd_waddr,
-    input wire i_RegWrite,
-    input wire i_UpperType,
-    input wire i_IsUInstruct,
+    input reg i_ALUSrc,
+    input reg i_isJALR,
+    input reg i_Jump,
+    input reg i_BranchEqual,
+    input reg i_BranchLT,
+    input reg i_Branch,
+    input reg i_MemRead,
+    input reg i_MemtoReg,
+    input reg i_MemWrite,
+    input reg [4:0] i_rd_waddr,
+    input reg i_RegWrite,
+    input reg i_UpperType,
+    input reg i_IsUInstruct,
     // output mux signals
-    output wire o_isJALR,
-    output wire o_Jump,
-    output wire o_BranchEqual,
-    output wire o_BranchLT,
-    output wire o_Branch,
-    output wire o_MemRead,
-    output wire o_MemtoReg,
-    output wire o_MemWrite,
-    output wire [4:0] o_rd_waddr,
-    output wire o_RegWrite,
-    output wire o_IsUInstruct,
+    output reg o_isJALR,
+    output reg o_Jump,
+    output reg o_BranchEqual,
+    output reg o_BranchLT,
+    output reg o_Branch,
+    output reg o_MemRead,
+    output reg o_MemtoReg,
+    output reg o_MemWrite,
+    output reg [4:0] o_rd_waddr,
+    output reg o_RegWrite,
+    output reg o_IsUInstruct,
     // U type result
-    output wire [31:0] o_uimm,
+    output reg [31:0] o_uimm,
     // Trap Check
     output wire o_trap
 );
@@ -71,7 +72,9 @@ module execute(
     assign o_uimm = i_UpperType ? target_addr : imm; // target_addr = i_PC + imm
 
     // mask decoder
-    assign o_unsigned = funct3[2]; // LB/LBU, LH/LHU, LW/LWU
+    always @(posedge i_clk) begin
+        o_unsigned <= funct3[2]; // LB/LBU, LH/LHU, LW/LWU
+    end
     assign o_mask = (funct3[1:0] == 2'b00) ? (
                         (o_result[1:0] == 2'b00) ? 4'b0001 :
                         (o_result[1:0] == 2'b01) ? 4'b0010 :
@@ -110,20 +113,22 @@ module execute(
     assign o_trap = (mem_misalign && (i_MemWrite || i_MemRead)) || ((target_addr[1:0] != 2'b00) && (i_Jump || i_Branch));
 
     // pass through stage
-    assign o_PC = i_PC;
-    assign o_PC4 = i_PC4;
-    assign o_isJALR = i_isJALR;
-    assign o_Jump = i_Jump;
-    assign o_BranchEqual = i_BranchEqual;
-    assign o_BranchLT = i_BranchLT;
-    assign o_Branch = i_Branch;
-    assign o_MemRead = i_MemRead;
-    assign o_MemtoReg = i_MemtoReg;
-    assign o_MemWrite = i_MemWrite;
-    assign o_rd_waddr = i_rd_waddr;
-    assign o_RegWrite = i_RegWrite;
-    assign o_IsUInstruct = i_IsUInstruct;
-    assign o_reg2 = reg2;
+    always @(posedge i_clk) begin
+        o_PC <= i_PC;
+        o_PC4 <= i_PC4;
+        o_isJALR <= i_isJALR;
+        o_Jump <= i_Jump;
+        o_BranchEqual <= i_BranchEqual;
+        o_BranchLT <= i_BranchLT;
+        o_Branch <= i_Branch;
+        o_MemRead <= i_MemRead;
+        o_MemtoReg <= i_MemtoReg;
+        o_MemWrite <= i_MemWrite;
+        o_rd_waddr <= i_rd_waddr;
+        o_RegWrite <= i_RegWrite;
+        o_IsUInstruct <= i_IsUInstruct;
+        o_reg2 <= reg2;
+    end
 
 endmodule
 

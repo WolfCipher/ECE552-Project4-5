@@ -1,5 +1,6 @@
 
 module decode (
+    input wire i_clk,
     input [31:0] instruction,
     // output mux values
     output wire jump,
