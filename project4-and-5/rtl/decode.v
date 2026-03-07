@@ -1,46 +1,46 @@
 
 module decode (
     input wire i_clk,
-    input [31:0] instruction,
+    input wire [31:0] instruction,
     // output mux values
-    output wire jump,
-    output wire branch_eq,
-    output wire branch_lt,
-    output wire branch,
-    output wire mem_read,
-    output wire mem_write,
-    output wire mem_to_reg,
-    output wire alu_src, //1 if reg 0 if imm
-    output wire reg_write,
-    output wire is_u_instruct,
-    output wire u_type,
-    output wire is_jalr,
+    output reg jump,
+    output reg branch_eq,
+    output reg branch_lt,
+    output reg branch,
+    output reg mem_read,
+    output reg mem_write,
+    output reg mem_to_reg,
+    output reg alu_src, //1 if reg 0 if imm
+    output reg reg_write,
+    output reg is_u_instruct,
+    output reg u_type,
+    output reg is_jalr,
     // register and immediate values
-    output wire [31:0] reg_data1,
-    output wire [31:0] reg_data2,
-    output wire [31:0] immediate,
+    output reg [31:0] reg_data1,
+    output reg [31:0] reg_data2,
+    output reg [31:0] o_immediate,
     // ALU values
-    output wire [2:0] funct3,
-    output wire [2:0] i_opsel,
-    output wire i_sub,
-    output wire i_unsigned,
-    output wire i_arith,
+    output reg [2:0] funct3,
+    output reg [2:0] i_opsel,
+    output reg i_sub,
+    output reg i_unsigned,
+    output reg i_arith,
     // register addresses
     output wire [4:0] rs1_raddr,
     output wire [4:0] rs2_raddr,
-    output wire [4:0] o_rd_waddr,
+    output reg [4:0] o_rd_waddr,
     // retire instruction handling
-    output halt, // asserted if EBREAK
-    output wire [31:0] o_retire_instruction,
-    output wire trap,
-    output wire [31:0] rs1_rdata,
-    output wire [31:0] rs2_rdata,
+    output reg halt, // asserted if EBREAK
+    output reg [31:0] o_retire_instruction,
+    output reg trap,
+    output reg [31:0] rs1_rdata,
+    output reg [31:0] rs2_rdata,
     // output wire [4:0] rd_waddr,
     // output wire [31:0] rd_wdata,
     // PC values
     input wire [31:0] i_PC,
-    output wire [31:0] o_PC,
-    output wire [31:0] o_PC4
+    output reg [31:0] o_PC,
+    output reg [31:0] o_PC4
 );
 
 //control file
@@ -48,7 +48,9 @@ module decode (
 wire [6:0] opcode;
 assign opcode = instruction[6:0];
 //funct3[2:0] is instruction[14:12]
-assign funct3 = instruction[14:12];
+always @(posedge i_clk) begin
+    funct3 <= instruction[14:12];
+end
 //funct7[6:0] is instruction[31:25]
 wire [6:0] funct7;
 assign funct7 = instruction[31:25];
@@ -107,39 +109,50 @@ assign format = is_r ? 6'b000001 : // R-Type
 
 assign o_PC = i_PC;
 assign o_PC4 = i_PC + 31'd4;
-
-// handle retire values
-assign halt = ebreak_valid;
-assign o_retire_instruction = instruction;
 assign rs1_raddr = instruction[19:15];
 assign rs2_raddr = instruction[24:20];
-assign rs1_rdata = (rs1_raddr == 5'd0) ? 32'd0 : reg_data1;
-assign rs2_rdata = (rs2_raddr == 5'd0) ? 32'd0 : reg_data2;
+
+// handle retire values
+always @(posedge i_clk) begin
+    halt <= ebreak_valid;
+    o_retire_instruction <= instruction;
+    rs1_rdata <= (rs1_raddr == 5'd0) ? 32'd0 : reg_data1;
+    rs2_rdata <= (rs2_raddr == 5'd0) ? 32'd0 : reg_data2;
+    trap <= ~valid;
+end
 
 // mux control signals
-assign is_jalr = jalr_valid;
-assign jump = j_valid | jalr_valid; // J-Type or jalr
-assign branch_eq = (funct3 == 3'b000) | (funct3 == 3'b101)  | (funct3 == 3'b111); // beq, bge(u)
-assign branch_lt = (funct3 == 3'b110) | (funct3 == 3'b100) | (funct3 == 3'b001); // blt(u), bne
-assign branch = b_valid; // is B-Type
-assign mem_read = load_valid; // is load
-assign mem_write = s_valid; // is S-Type
-assign mem_to_reg = load_valid; // is load
-assign alu_src = !(is_r || is_b); // choose imm unless R-Type or B-Type
-assign reg_write = r_valid || i_valid || u_valid || j_valid; // write unless S-Type or B-Type
-assign i_opsel = (r_valid || reg_i_valid) ? instruction[14:12] : 3'b000; // for R-Type and regular I-Type, use funct3; for other types, use ADD
-assign i_sub = (is_r && funct7[5]) | is_b; // sub for R-type, subtract compare for branch
-assign i_arith = funct7[5];
-assign i_unsigned = (funct3 == 3'b110) | (funct3 == 3'b011) | (funct3 == 3'b111);
-assign is_u_instruct = u_valid;
-assign u_type = ~instruction[5];
+always @(posedge i_clk) begin
+    // TODO: HANDLE FLUSHING HERE
+    is_jalr <= jalr_valid;
+    jump <= j_valid | jalr_valid; // J-Type or jalr
+    branch_eq <= (funct3 == 3'b000) | (funct3 == 3'b101)  | (funct3 == 3'b111); // beq, bge(u)
+    branch_lt <= (funct3 == 3'b110) | (funct3 == 3'b100) | (funct3 == 3'b001); // blt(u), bne
+    branch <= b_valid; // is B-Type
+    mem_read <= load_valid; // is load
+    mem_write <= s_valid; // is S-Type
+    mem_to_reg <= load_valid; // is load
+    alu_src <= !(is_r || is_b); // choose imm unless R-Type or B-Type
+    reg_write <= r_valid || i_valid || u_valid || j_valid; // write unless S-Type or B-Type
+    i_opsel <= (r_valid || reg_i_valid) ? instruction[14:12] : 3'b000; // for R-Type and regular I-Type, use funct3; for other types, use ADD
+    i_sub <= (is_r && funct7[5]) | is_b; // sub for R-type, subtract compare for branch
+    i_arith <= funct7[5];
+    i_unsigned <= (funct3 == 3'b110) | (funct3 == 3'b011) | (funct3 == 3'b111);
+    is_u_instruct <= u_valid;
+    u_type <= ~instruction[5];
+end
 
-assign trap = ~valid;
-
-imm i (instruction, format, immediate);
+// generate immediate
+wire [31:0] imm;
+imm i (instruction, format, imm);
+always @(posedge i_clk) begin
+    o_immediate <= imm;
+end
 
 // handle future register write
-assign o_rd_waddr = instruction[11:7];
+always @(posedge i_clk) begin
+    o_rd_waddr <= instruction[11:7];
+end
 
 endmodule
 

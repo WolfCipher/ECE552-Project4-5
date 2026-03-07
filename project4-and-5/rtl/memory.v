@@ -2,18 +2,18 @@
 module memory(
     input wire i_clk,
     // signals sent to data memory
-    input reg [3:0] i_mask,
-    input reg i_unsigned,
-    input reg [31:0] i_mem_addr,
-    input reg [31:0] i_reg2,
+    input wire [3:0] i_mask,
+    input wire i_unsigned,
+    input wire [31:0] i_mem_addr,
+    input wire [31:0] i_reg2,
     // ALU signal
-    input reg [31:0] i_result,
+    input wire [31:0] i_result,
     // Branch and PC signals
-    input reg i_eq,
-    input reg i_slt,
-    input reg [31:0] target_addr,
-    input reg [31:0] i_PC,
-    input reg [31:0] i_PC4,
+    input wire i_eq,
+    input wire i_slt,
+    input wire [31:0] target_addr,
+    input wire [31:0] i_PC,
+    input wire [31:0] i_PC4,
     output reg [31:0] o_PC,
     output reg [31:0] next_PC,
     // Results to choose between in WB stage
@@ -21,18 +21,18 @@ module memory(
     output reg [31:0] read_alu,
     output reg [31:0] o_uimm,
     // input Mux signals
-    input reg i_isJALR,
-    input reg i_Jump,
-    input reg i_BranchEqual,
-    input reg i_BranchLT,
-    input reg i_Branch,
-    input reg i_MemRead,
-    input reg i_MemtoReg,
+    input wire i_isJALR,
+    input wire i_Jump,
+    input wire i_BranchEqual,
+    input wire i_BranchLT,
+    input wire i_Branch,
+    input wire i_MemRead,
+    input wire i_MemtoReg,
     //input wire i_MemWrite, must ask one cycle ahead
-    input reg [4:0] i_rd_waddr,
-    input reg i_RegWrite,
-    input reg i_IsUInstruct,
-    input reg [31:0] i_uimm,
+    input wire [4:0] i_rd_waddr,
+    input wire i_RegWrite,
+    input wire i_IsUInstruct,
+    input wire [31:0] i_uimm,
     // output Mux signals
     output reg o_Jump,
     output reg o_MemtoReg,
@@ -41,7 +41,25 @@ module memory(
     output reg o_IsUInstruct,
     // dmem
     input wire [31:0] i_dmem_rdata,
-    output wire o_dmem_ren
+    output wire o_dmem_ren,
+    // Input Retire Instructions
+    input wire i_halt,
+    input wire [31:0] i_inst,
+    input wire i_trapD,
+    input wire [31:0] i_reg1,
+    input wire [31:0] i_reg2_retire,
+    input wire [4:0] i_rs1,
+    input wire [4:0] i_rs2,
+    input wire i_trapX,
+    // Output Retire Instructions
+    output reg o_halt,
+    output reg [31:0] o_inst,
+    output reg o_trapD,
+    output reg [31:0] o_reg1,
+    output reg [31:0] o_reg2,
+    output reg [4:0] o_rs1,
+    output reg [4:0] o_rs2,
+    output reg o_trapX
 );
 
     // determine PC
@@ -108,6 +126,16 @@ module memory(
         o_IsUInstruct <= i_IsUInstruct;
         o_uimm <= i_uimm;
         read_data <= o_data;
+
+        // Retire instructions
+        o_halt <= i_halt;
+        o_inst <= i_inst;
+        o_trapD <= i_trapD;
+        o_rs1 <= i_rs1;
+        o_rs2 <= i_rs2;
+        o_reg1 <= i_reg1;
+        o_reg2 <= i_reg2_retire;
+        o_trapX <= i_trapX;
     end
 
 endmodule

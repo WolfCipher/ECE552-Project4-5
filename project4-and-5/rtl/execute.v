@@ -3,17 +3,17 @@
 module execute(
     input wire i_clk,
     // ALU inputs
-    input reg [31:0] reg1,
-    input reg [31:0] reg2,
-    input reg [31:0] imm,
-    input reg [2:0] funct3,
-    input reg [2:0] i_opsel,
-    input reg i_sub,
-    input reg i_unsigned,
-    input reg i_arith,
+    input wire [31:0] reg1,
+    input wire [31:0] reg2,
+    input wire [31:0] imm,
+    input wire [2:0] funct3,
+    input wire [2:0] i_opsel,
+    input wire i_sub,
+    input wire i_unsigned,
+    input wire i_arith,
     // signals related to PC, branch, and ALU
-    input reg [31:0] i_PC,
-    input reg [31:0] i_PC4,
+    input wire [31:0] i_PC,
+    input wire [31:0] i_PC4,
     output reg [31:0] o_result,
     output reg o_eq,
     output reg o_slt,
@@ -27,19 +27,19 @@ module execute(
     output wire [31:0] mem_wdata,
     output reg [31:0] o_reg2,
     // input mux signals
-    input reg i_ALUSrc,
-    input reg i_isJALR,
-    input reg i_Jump,
-    input reg i_BranchEqual,
-    input reg i_BranchLT,
-    input reg i_Branch,
-    input reg i_MemRead,
-    input reg i_MemtoReg,
-    input reg i_MemWrite,
-    input reg [4:0] i_rd_waddr,
-    input reg i_RegWrite,
-    input reg i_UpperType,
-    input reg i_IsUInstruct,
+    input wire i_ALUSrc,
+    input wire i_isJALR,
+    input wire i_Jump,
+    input wire i_BranchEqual,
+    input wire i_BranchLT,
+    input wire i_Branch,
+    input wire i_MemRead,
+    input wire i_MemtoReg,
+    input wire i_MemWrite,
+    input wire [4:0] i_rd_waddr,
+    input wire i_RegWrite,
+    input wire i_UpperType,
+    input wire i_IsUInstruct,
     // output mux signals
     output reg o_isJALR,
     output reg o_Jump,
@@ -54,8 +54,23 @@ module execute(
     output reg o_IsUInstruct,
     // U type result
     output reg [31:0] o_uimm,
-    // Trap Check
-    output wire o_trap
+    // Input Retire Instructions
+    input wire i_halt,
+    input wire [31:0] i_inst,
+    input wire i_trapD,
+    input wire [31:0] i_reg1,
+    input wire [31:0] i_reg2,
+    input wire [4:0] i_rs1,
+    input wire [4:0] i_rs2,
+    // Output Retire Instructions
+    output reg o_halt,
+    output reg [31:0] o_inst,
+    output reg o_trapD,
+    output reg [31:0] o_reg1,
+    output reg [31:0] o_reg2_retire,
+    output reg [4:0] o_rs1,
+    output reg [4:0] o_rs2,
+    output reg o_trapX
 );
 
     // ALU
@@ -110,7 +125,9 @@ module execute(
                         (funct3[1:0] == 2'b01) ? (o_result[0] != 1'b0) : // HALFWORD must be halfword-aligned
                         (o_result[1:0] != 2'b00); // WORD must be word-aligned
 
-    assign o_trap = (mem_misalign && (i_MemWrite || i_MemRead)) || ((target_addr[1:0] != 2'b00) && (i_Jump || i_Branch));
+    always @(posedge i_clk) begin
+        o_trapX <= (mem_misalign && (i_MemWrite || i_MemRead)) || ((target_addr[1:0] != 2'b00) && (i_Jump || i_Branch));
+    end
 
     // pass through stage
     always @(posedge i_clk) begin
@@ -128,6 +145,15 @@ module execute(
         o_RegWrite <= i_RegWrite;
         o_IsUInstruct <= i_IsUInstruct;
         o_reg2 <= reg2;
+
+        // Retire instructions
+        o_halt <= i_halt;
+        o_inst <= i_inst;
+        o_trapD <= i_trapD;
+        o_reg1 <= i_reg1;
+        o_reg2_retire <= i_reg2;
+        o_rs1 <= i_rs1;
+        o_rs2 <= i_rs2;
     end
 
 endmodule

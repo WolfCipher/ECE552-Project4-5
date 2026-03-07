@@ -170,9 +170,15 @@ module hart #(
     reg [31:0] mem_read_M_W; // TODO replace with i_dem_rdata
 
     // Signals just between decode and execute stages
+    wire [31:0] rs1_rdata, rs2_rdata;
     reg [31:0] reg1, reg2, imm;
     reg [2:0] funct3, i_opsel;
     reg i_sub, i_unsigned, i_arith;
+    
+    always @(posedge i_clk) begin
+        reg1 <= rs1_rdata;
+        reg2 <= rs2_rdata;
+    end
 
     // Signals just between execute and memory
     reg eq, slt, mem_unsigned;
@@ -184,23 +190,55 @@ module hart #(
     end
 
     // **** HANDLE RETIRE *******
-    // for single-cycle implementations, o_retire_valid will always be 1
+    // VALID
+    // TODO: 1 if not a flush
     assign o_retire_valid = 1;
+
+    // TRAP
     // check for traps in stages where we can find a bad instruction and bad addresses
-    wire trap_D, trap_X;
-    assign o_retire_trap = trap_D | trap_X;
-    // retired instruction pc
+    reg trapD_D_X, trapD_X_M, trapD_M_W;
+    reg trapX_X_M, trapX_M_W;
+    wire trapD_W_F, trapX_W_F;
+    assign o_retire_trap = trapD_W_F | trapX_W_F;
+
+    // PC
     assign o_retire_next_pc = next_PC_W_F;
-    // register addresses
-    assign o_retire_rs1_raddr = rs1_raddr;
-    assign o_retire_rs2_raddr = rs2_raddr;
-    //assign o_retire_rd_waddr = i_reg_write_addr;
-    //assign o_retire_rd_wdata = i_reg_write_data;
+
+    // Register Source
+    reg [4:0] rs1_raddr_D_X, rs1_raddr_X_M, rs1_raddr_M_W;
+    reg [4:0] rs2_raddr_D_X, rs2_raddr_X_M, rs2_raddr_M_W;
+    reg [31:0] rs1_rdata_D_X, rs1_rdata_X_M, rs1_rdata_M_W;
+    reg [31:0] rs2_rdata_D_X, rs2_rdata_X_M, rs2_rdata_M_W;
+    wire [4:0] rs1_raddr_W_F, rs2_raddr_W_F;
+    wire [31:0] rs1_rdata_W_F, rs2_rdata_W_F;
+    assign o_retire_rs1_raddr = rs1_raddr_W_F;
+    assign o_retire_rs2_raddr = rs2_raddr_W_F;
+    assign o_retire_rs1_rdata = rs1_rdata_W_F;
+    assign o_retire_rs2_rdata = rs2_rdata_W_F;
+
+    always @(posedge i_clk) begin
+        rs1_raddr_D_X <= rs1_raddr;
+        rs2_raddr_D_X <= rs2_raddr;
+        rs1_rdata_D_X <= rs1_rdata;
+        rs2_rdata_D_X <= rs2_rdata;
+    end
+
+    // Register Destination
     assign o_retire_rd_waddr = wb_en ? wb_addr : 5'd0;
     assign o_retire_rd_wdata =
         (wb_en && wb_addr != 5'd0)
             ? wb_data
             : 32'd0;
+
+    // HALT
+    reg halt_D_X, halt_X_M, halt_M_W;
+    wire halt_W_F;
+    assign o_retire_halt = halt_W_F;
+
+    // INSTRUCTION
+    reg [31:0] inst_D_X, inst_X_M, inst_M_W;
+    wire [31:0] inst_W_F;
+    assign o_retire_inst = inst_W_F;
 
 
     // TODO take action if the retired instruction is valid
@@ -213,9 +251,9 @@ module hart #(
     rf #(0) reg_file (
         i_clk, i_rst,
         // Register read port 1, with input address [0, 31] and output data.
-        rs1_raddr, reg1,
+        rs1_raddr, rs1_rdata,
         // Register read port 2, with input address [0, 31] and output data.
-        rs2_raddr, reg2,
+        rs2_raddr, rs2_rdata,
         // Write register enable, address [0, 31] and input data.
         i_reg_write_en, i_reg_write_addr, i_reg_write_data
     );
@@ -241,15 +279,14 @@ module hart #(
         ALUSrc_D_X, //1 if reg 0 if imm
         RegWrite_D_X, IsUInstruct_D_X, UpperType_D_X, isJALR_D_X,
         // register and immediate values
-        reg1, reg2, imm,
+        rs1_rdata, rs2_rdata, imm,
         // ALU values
         funct3, i_opsel, i_sub, i_unsigned, i_arith,
         // Register accesses
         rs1_raddr, rs2_raddr, rd_waddr_D_X,
         // Retire instructions
-        o_retire_halt, o_retire_inst, trap_D,
-        o_retire_rs1_rdata, o_retire_rs2_rdata,
-        //o_retire_rd_waddr, o_retire_rd_wdata,
+        halt_D_X, inst_D_X, trapD_D_X,
+        rs1_rdata_D_X, rs2_rdata_D_X,
         // PC
         PC_F_D, PC_D_X, PC4_D_X
     );
@@ -272,8 +309,15 @@ module hart #(
         rd_waddr_X_M, RegWrite_X_M, IsUInstruct_X_M,
         // U type result
         uimm_X_M,
-        // trap check
-        trap_X
+        // input retire instructions
+        halt_D_X, inst_D_X, trapD_D_X,
+        rs1_rdata_D_X, rs2_rdata_D_X,
+        rs1_raddr_D_X, rs2_raddr_D_X,
+        // output retire instructions
+        halt_X_M, inst_X_M, trapX_X_M,
+        rs1_rdata_X_M, rs2_rdata_X_M,
+        rs1_raddr_X_M, rs2_raddr_X_M,
+        trapX_X_M
     );
 
     memory m (
@@ -294,7 +338,17 @@ module hart #(
         // output Mux signals
         Jump_M_W, MemtoReg_M_W, rd_waddr_M_W, RegWrite_M_W, IsUInstruct_M_W,
         // dmem
-        i_dmem_rdata, o_dmem_ren
+        i_dmem_rdata, o_dmem_ren,
+        // input retire instructions
+        halt_X_M, inst_X_M, trapX_X_M,
+        rs1_rdata_X_M, rs2_rdata_X_M,
+        rs1_raddr_X_M, rs2_raddr_X_M,
+        trapX_X_M,
+        // output retire instructions
+        halt_M_W, inst_M_W, trapX_M_W,
+        rs1_rdata_M_W, rs2_rdata_M_W,
+        rs1_raddr_M_W, rs2_raddr_M_W,
+        trapX_M_W
     );
 
 
@@ -312,7 +366,17 @@ module hart #(
         RegWrite_M_W, IsUInstruct_M_W,
         // output signals
         wb_en,
-        wb_addr
+        wb_addr,
+        // input retire instructions
+        halt_M_W, inst_M_W, trapX_M_W,
+        rs1_rdata_M_W, rs2_rdata_M_W,
+        rs1_raddr_M_W, rs2_raddr_M_W,
+        trapX_M_W,
+        // output retire instructions
+        halt_W_F, inst_W_F, trapX_W_F,
+        rs1_rdata_W_F, rs2_rdata_W_F,
+        rs1_raddr_W_F, rs2_raddr_W_F,
+        trapX_W_F
     );
 
 endmodule
