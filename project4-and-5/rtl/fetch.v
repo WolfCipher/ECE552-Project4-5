@@ -6,9 +6,9 @@ module fetch #(
 	input i_clk,
 	input wire [31:0] i_imem_rdata, // data from mem
 	input wire [31:0] next_pc,
-	output reg [31:0] o_imem_raddr,
-	output reg [31:0] pc_to_decode,
-	output reg [31:0] instruction
+	output wire [31:0] o_imem_raddr,
+	output wire [31:0] pc_to_decode,
+	output wire [31:0] instruction
 );
 
 	reg [31:0] pc;

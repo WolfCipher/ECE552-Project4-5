@@ -14,18 +14,18 @@ module execute(
     // signals related to PC, branch, and ALU
     input wire [31:0] i_PC,
     input wire [31:0] i_PC4,
-    output reg [31:0] o_result,
-    output reg o_eq,
-    output reg o_slt,
-    output reg [31:0] target_addr,
-    output reg [31:0] o_PC,
-    output reg [31:0] o_PC4,
+    output wire [31:0] o_result,
+    output wire o_eq,
+    output wire o_slt,
+    output wire [31:0] target_addr,
+    output wire [31:0] o_PC,
+    output wire [31:0] o_PC4,
     // signals for proper memory access
-    output reg o_unsigned, // for memory
+    output wire o_unsigned, // for memory
     output wire [3:0] o_mask, // for memory
     output wire [31:0] mem_addr, // for memory; different from o_result if not working with a word
     output wire [31:0] mem_wdata,
-    output reg [31:0] o_reg2,
+    output wire [31:0] o_reg2,
     // input mux signals
     input wire i_ALUSrc,
     input wire i_isJALR,
@@ -41,19 +41,19 @@ module execute(
     input wire i_UpperType,
     input wire i_IsUInstruct,
     // output mux signals
-    output reg o_isJALR,
-    output reg o_Jump,
-    output reg o_BranchEqual,
-    output reg o_BranchLT,
-    output reg o_Branch,
-    output reg o_MemRead,
-    output reg o_MemtoReg,
-    output reg o_MemWrite,
-    output reg [4:0] o_rd_waddr,
-    output reg o_RegWrite,
-    output reg o_IsUInstruct,
+    output wire o_isJALR,
+    output wire o_Jump,
+    output wire o_BranchEqual,
+    output wire o_BranchLT,
+    output wire o_Branch,
+    output wire o_MemRead,
+    output wire o_MemtoReg,
+    output wire o_MemWrite,
+    output wire [4:0] o_rd_waddr,
+    output wire o_RegWrite,
+    output wire o_IsUInstruct,
     // U type result
-    output reg [31:0] o_uimm,
+    output wire [31:0] o_uimm,
     // Input Retire Instructions
     input wire i_halt,
     input wire [31:0] i_inst,
@@ -63,33 +63,34 @@ module execute(
     input wire [4:0] i_rs1,
     input wire [4:0] i_rs2,
     // Output Retire Instructions
-    output reg o_halt,
-    output reg [31:0] o_inst,
-    output reg o_trapD,
-    output reg [31:0] o_reg1,
-    output reg [31:0] o_reg2_retire,
-    output reg [4:0] o_rs1,
-    output reg [4:0] o_rs2,
-    output reg o_trapX
+    output wire o_halt,
+    output wire [31:0] o_inst,
+    output wire o_trapD,
+    output wire [31:0] o_reg1,
+    output wire [31:0] o_reg2_retire,
+    output wire [4:0] o_rs1,
+    output wire [4:0] o_rs2,
+    output wire o_trapX,
+    output wire [31:0] dmem_wdata,
+    output wire dmem_wen
 );
 
     // ALU
     wire [31:0] i_op1, i_op2;
     assign i_op1 = reg1;
     assign i_op2 = i_ALUSrc ? imm : reg2;
+
     alu op (i_opsel, i_sub, i_unsigned, i_arith, i_op1, i_op2, o_result, o_eq, o_slt);
-    
 
     // branch or jump target address
     assign target_addr = i_isJALR ? (reg1 + imm) : (i_PC + imm);
 
     // U-type immediate
-    assign o_uimm = i_UpperType ? target_addr : imm; // target_addr = i_PC + imm
+    assign o_uimm = i_UpperType ? target_addr : imm;
 
     // mask decoder
-    always @(posedge i_clk) begin
-        o_unsigned <= funct3[2]; // LB/LBU, LH/LHU, LW/LWU
-    end
+    assign o_unsigned = funct3[2]; // LB/LBU, LH/LHU, LW/LWU
+ 
     assign o_mask = (funct3[1:0] == 2'b00) ? (
                         (o_result[1:0] == 2'b00) ? 4'b0001 :
                         (o_result[1:0] == 2'b01) ? 4'b0010 :
@@ -125,36 +126,34 @@ module execute(
                         (funct3[1:0] == 2'b01) ? (o_result[0] != 1'b0) : // HALFWORD must be halfword-aligned
                         (o_result[1:0] != 2'b00); // WORD must be word-aligned
 
-    always @(posedge i_clk) begin
-        o_trapX <= (mem_misalign && (i_MemWrite || i_MemRead)) || ((target_addr[1:0] != 2'b00) && (i_Jump || i_Branch));
-    end
+    assign o_trapX = (mem_misalign && (i_MemWrite || i_MemRead)) || ((target_addr[1:0] != 2'b00) && (i_Jump || i_Branch));
 
     // pass through stage
-    always @(posedge i_clk) begin
-        o_PC <= i_PC;
-        o_PC4 <= i_PC4;
-        o_isJALR <= i_isJALR;
-        o_Jump <= i_Jump;
-        o_BranchEqual <= i_BranchEqual;
-        o_BranchLT <= i_BranchLT;
-        o_Branch <= i_Branch;
-        o_MemRead <= i_MemRead;
-        o_MemtoReg <= i_MemtoReg;
-        o_MemWrite <= i_MemWrite;
-        o_rd_waddr <= i_rd_waddr;
-        o_RegWrite <= i_RegWrite;
-        o_IsUInstruct <= i_IsUInstruct;
-        o_reg2 <= reg2;
+    assign o_PC = i_PC;
+    assign o_PC4 = i_PC4;
+    assign o_isJALR = i_isJALR;
+    assign o_Jump = i_Jump;
+    assign o_BranchEqual = i_BranchEqual;
+    assign o_BranchLT = i_BranchLT;
+    assign o_Branch = i_Branch;
+    assign o_MemRead = i_MemRead;
+    assign o_MemtoReg = i_MemtoReg;
+    assign o_MemWrite = i_MemWrite;
+    assign o_rd_waddr = i_rd_waddr;
+    assign o_RegWrite = i_RegWrite;
+    assign o_IsUInstruct = i_IsUInstruct;
+    assign o_reg2 = reg2;
 
-        // Retire instructions
-        o_halt <= i_halt;
-        o_inst <= i_inst;
-        o_trapD <= i_trapD;
-        o_reg1 <= i_reg1;
-        o_reg2_retire <= i_reg2;
-        o_rs1 <= i_rs1;
-        o_rs2 <= i_rs2;
-    end
+    // Retire instructions
+    assign o_halt = i_halt;
+    assign o_inst = i_inst;
+    assign o_trapD = i_trapD;
+    assign o_reg1 = i_reg1;
+    assign o_reg2_retire = i_reg2;
+    assign o_rs1 = i_rs1;
+    assign o_rs2 = i_rs2;
+    assign dmem_wdata = mem_wdata;
+    assign dmem_wen = i_MemWrite;
 
 endmodule
 

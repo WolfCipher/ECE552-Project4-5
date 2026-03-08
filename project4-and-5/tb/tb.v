@@ -96,6 +96,7 @@ module hart_tb #(
 
     integer cycles, run;
     integer num_instructions;
+    reg [1023:0] memfile;
     initial begin
         clk = 1;
         rst = 0;
@@ -107,8 +108,10 @@ module hart_tb #(
         end
 
         // Load the test program into memory at address 0.
-        $display("Loading program.");
-        $readmemh("program.mem", imem);
+        if (!$value$plusargs("MEM=%s", memfile))
+            memfile = "program.mem";
+        $display("Loading program: %0s", memfile);
+        $readmemh(memfile, imem);
 
         // Reset the dut.
         $display("Resetting hart.");

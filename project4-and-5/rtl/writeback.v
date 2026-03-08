@@ -8,7 +8,7 @@ module writeback(
     input wire [31:0] i_uimm,
     output wire [31:0] dest_result,
     output wire [31:0] o_PC,
-    output reg [31:0] o_next_PC,
+    output wire [31:0] o_next_PC,
     // input mux signals
     input wire i_Jump,
     input wire i_MemtoReg,
@@ -27,6 +27,12 @@ module writeback(
     input wire [4:0] i_rs1,
     input wire [4:0] i_rs2,
     input wire i_trapX,
+    input wire [3:0] i_dmem_mask,
+    input wire [31:0] i_dmem_addr,
+    input wire [31:0] i_dmem_wdata,
+    input wire i_dmem_ren,
+    input wire i_dmem_wen,
+    input wire [31:0] i_dmem_rdata,
     // Output Retire Instructions
     output wire o_halt,
     output wire [31:0] o_inst,
@@ -35,16 +41,20 @@ module writeback(
     output wire [31:0] o_reg2,
     output wire [4:0] o_rs1,
     output wire [4:0] o_rs2,
-    output wire o_trapX
+    output wire o_trapX,
+    output wire [3:0] o_dmem_mask,
+    output wire [31:0] o_dmem_addr,
+    output wire [31:0] o_dmem_wdata,
+    output wire o_dmem_ren,
+    output wire o_dmem_wen,
+    output wire [31:0] o_dmem_rdata
 );
     // determine value to write back
     assign dest_result = i_Jump ? (i_PC + 32'd4) : (i_IsUInstruct ? i_uimm : (i_MemtoReg ? read_data : read_alu));
 
     // pass through stage - write back is handled via connections in hart
     // remember, writing occurs before reading in decode cycle
-    always @(posedge i_clk) begin
-        o_next_PC <= i_next_PC;
-    end
+    assign o_next_PC = i_next_PC;
 
     // retire instructions
     assign o_PC = i_PC;
@@ -58,6 +68,12 @@ module writeback(
     assign o_rs1 = i_rs1;
     assign o_rs2 = i_rs2;
     assign o_trapX = i_trapX;
+    assign o_dmem_mask = i_dmem_mask;
+    assign o_dmem_addr = i_dmem_addr;
+    assign o_dmem_wdata = i_dmem_wdata;
+    assign o_dmem_ren = i_dmem_ren;
+    assign o_dmem_wen = i_dmem_wen;
+    assign o_dmem_rdata = i_dmem_rdata;
 
 endmodule
 

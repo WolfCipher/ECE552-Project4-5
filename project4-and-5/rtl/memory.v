@@ -14,12 +14,12 @@ module memory(
     input wire [31:0] target_addr,
     input wire [31:0] i_PC,
     input wire [31:0] i_PC4,
-    output reg [31:0] o_PC,
-    output reg [31:0] next_PC,
+    output wire [31:0] o_PC,
+    output wire [31:0] next_PC,
     // Results to choose between in WB stage
-    output reg [31:0] read_data,
-    output reg [31:0] read_alu,
-    output reg [31:0] o_uimm,
+    output wire [31:0] read_data,
+    output wire [31:0] read_alu,
+    output wire [31:0] o_uimm,
     // input Mux signals
     input wire i_isJALR,
     input wire i_Jump,
@@ -34,11 +34,11 @@ module memory(
     input wire i_IsUInstruct,
     input wire [31:0] i_uimm,
     // output Mux signals
-    output reg o_Jump,
-    output reg o_MemtoReg,
-    output reg [4:0] o_rd_waddr,
-    output reg o_RegWrite,
-    output reg o_IsUInstruct,
+    output wire o_Jump,
+    output wire o_MemtoReg,
+    output wire [4:0] o_rd_waddr,
+    output wire o_RegWrite,
+    output wire o_IsUInstruct,
     // dmem
     input wire [31:0] i_dmem_rdata,
     output wire o_dmem_ren,
@@ -51,15 +51,23 @@ module memory(
     input wire [4:0] i_rs1,
     input wire [4:0] i_rs2,
     input wire i_trapX,
+    input wire [31:0] i_dmem_wdata,
+    input wire i_dmem_wen,
     // Output Retire Instructions
-    output reg o_halt,
-    output reg [31:0] o_inst,
-    output reg o_trapD,
-    output reg [31:0] o_reg1,
-    output reg [31:0] o_reg2,
-    output reg [4:0] o_rs1,
-    output reg [4:0] o_rs2,
-    output reg o_trapX
+    output wire o_halt,
+    output wire [31:0] o_inst,
+    output wire o_trapD,
+    output wire [31:0] o_reg1,
+    output wire [31:0] o_reg2,
+    output wire [4:0] o_rs1,
+    output wire [4:0] o_rs2,
+    output wire o_trapX,
+    output wire [3:0] o_dmem_mask,
+    output wire [31:0] o_dmem_addr,
+    output wire [31:0] o_dmem_wdata,
+    output wire o_dmem_ren_retire,
+    output wire o_dmem_wen,
+    output wire [31:0] o_dmem_rdata
 );
 
     // determine PC
@@ -73,9 +81,7 @@ module memory(
                             (~i_BranchEqual & ~i_eq & ~i_BranchLT)) // bne
                         & i_Branch;
 
-    always @(posedge i_clk) begin
-        next_PC <= (branch_taken || i_Jump) ? muxed_target : i_PC4;
-    end
+    assign next_PC = (branch_taken || i_Jump) ? muxed_target : i_PC4;
 
     // dmem
     assign o_dmem_ren = i_MemRead;
@@ -116,27 +122,32 @@ module memory(
                     32'd0; // default case, should never occur
 
     // pass through stage
-    always @(posedge i_clk) begin
-        o_PC <= i_PC;
-        read_alu <= i_result;
-        o_Jump <= i_Jump;
-        o_MemtoReg <= i_MemtoReg;
-        o_rd_waddr <= i_rd_waddr;
-        o_RegWrite <= i_RegWrite;
-        o_IsUInstruct <= i_IsUInstruct;
-        o_uimm <= i_uimm;
-        read_data <= o_data;
+    assign o_PC = i_PC;
+    assign read_alu = i_result;
+    assign o_Jump = i_Jump;
+    assign o_MemtoReg = i_MemtoReg;
+    assign o_rd_waddr = i_rd_waddr;
+    assign o_RegWrite = i_RegWrite;
+    assign o_IsUInstruct = i_IsUInstruct;
+    assign o_uimm = i_uimm;
+    assign read_data = o_data;
 
-        // Retire instructions
-        o_halt <= i_halt;
-        o_inst <= i_inst;
-        o_trapD <= i_trapD;
-        o_rs1 <= i_rs1;
-        o_rs2 <= i_rs2;
-        o_reg1 <= i_reg1;
-        o_reg2 <= i_reg2_retire;
-        o_trapX <= i_trapX;
-    end
+    // Retire instructions
+    assign o_halt = i_halt;
+    assign o_inst = i_inst;
+    assign o_trapD = i_trapD;
+    assign o_rs1 = i_rs1;
+    assign o_rs2 = i_rs2;
+    assign o_reg1 = i_reg1;
+    assign o_reg2 = i_reg2_retire;
+    assign o_trapX = i_trapX;
+
+    assign o_dmem_wdata = i_dmem_wdata;
+    assign o_dmem_wen = i_dmem_wen;
+    assign o_dmem_mask = i_mask;
+    assign o_dmem_addr = i_mem_addr;
+    assign o_dmem_rdata = i_dmem_rdata;
+    assign o_dmem_ren_retire = i_MemRead;
 
 endmodule
 
