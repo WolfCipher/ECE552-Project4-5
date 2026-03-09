@@ -564,6 +564,11 @@ module hart #(
         rs1_rdata_D_X_w, rs2_rdata_D_X_w,
         // PC
         PC_F_D_r, PC_D_X_w, PC4_D_X_w
+        //harzard detection stuff
+        RegWrite_D_X_r, rd_waddr_D_X_r,   // EX stage
+        RegWrite_X_M_r, rd_waddr_X_M_r,   // MEM stage
+        RegWrite_M_W_r, rd_waddr_M_W_r,   // WB stage
+        stall
     );
 
     execute x (

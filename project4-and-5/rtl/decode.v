@@ -40,8 +40,23 @@ module decode (
     // PC values
     input wire [31:0] i_PC,
     output wire [31:0] o_PC,
-    output wire [31:0] o_PC4
+    output wire [31:0] o_PC4,
+
+    // new inputs/outputs for hazard detection unit
+    input wire        ex_reg_write,
+    input wire [4:0]  ex_rd,
+    input wire        mem_reg_write,
+    input wire [4:0]  mem_rd,
+    input wire        wb_reg_write,
+    input wire [4:0]  wb_rd,
+    output wire o_stall
 );
+
+// see if rs1 and rs2 are actually used
+wire uses_rs1, uses_rs2;
+assign uses_rs1 = r_valid || i_valid || s_valid || b_valid;
+assign uses_rs2 = r_valid || s_valid || b_valid;
+
 
 //control file
 //opcode[6:0] is instruction[6:0]
@@ -97,6 +112,42 @@ assign ebreak_valid = (instruction == 32'h00100073); // EBREAK instruction
 
 assign valid = r_valid || i_valid || s_valid || b_valid || u_valid || j_valid || ebreak_valid;
 
+//Harzard Detection --------------------
+wire hazard_ex_rs1, hazard_ex_rs2;
+wire hazard_mem_rs1, hazard_mem_rs2;
+wire hazard_wb_rs1, hazard_wb_rs2;
+
+assign hazard_ex_rs1  = ex_reg_write  && (ex_rd  != 5'd0) && uses_rs1 && (ex_rd  == rs1_raddr);
+assign hazard_ex_rs2  = ex_reg_write  && (ex_rd  != 5'd0) && uses_rs2 && (ex_rd  == rs2_raddr);
+assign hazard_mem_rs1 = mem_reg_write && (mem_rd != 5'd0) && uses_rs1 && (mem_rd == rs1_raddr);
+assign hazard_mem_rs2 = mem_reg_write && (mem_rd != 5'd0) && uses_rs2 && (mem_rd == rs2_raddr);
+assign hazard_wb_rs1  = wb_reg_write  && (wb_rd  != 5'd0) && uses_rs1 && (wb_rd  == rs1_raddr);
+assign hazard_wb_rs2  = wb_reg_write  && (wb_rd  != 5'd0) && uses_rs2 && (wb_rd  == rs2_raddr);
+
+assign o_stall = hazard_ex_rs1 || hazard_ex_rs2
+              || hazard_mem_rs1 || hazard_mem_rs2
+              || hazard_wb_rs1  || hazard_wb_rs2;
+
+
+// mux control signals --> added 0 options to all controls in case we have to flush
+assign jump          = o_stall ? 1'b0 : (j_valid | jalr_valid);
+assign branch_eq     = o_stall ? 1'b0 : ((funct3 == 3'b000) | (funct3 == 3'b101) | (funct3 == 3'b111));
+assign branch_lt     = o_stall ? 1'b0 : ((funct3 == 3'b110) | (funct3 == 3'b100) | (funct3 == 3'b001));
+assign branch        = o_stall ? 1'b0 : b_valid;
+assign mem_read      = o_stall ? 1'b0 : load_valid;
+assign mem_write     = o_stall ? 1'b0 : s_valid;
+assign mem_to_reg    = o_stall ? 1'b0 : load_valid;
+assign alu_src       = o_stall ? 1'b0 : !(is_r || is_b);
+assign reg_write     = o_stall ? 1'b0 : (r_valid || i_valid || u_valid || j_valid);
+assign is_u_instruct = o_stall ? 1'b0 : u_valid;
+assign u_type        = o_stall ? 1'b0 : ~instruction[5];
+assign is_jalr       = o_stall ? 1'b0 : jalr_valid;
+assign i_opsel       = o_stall ? 3'b000 : ((r_valid || reg_i_valid) ? instruction[14:12] : 3'b000);
+assign i_sub         = o_stall ? 1'b0 : ((is_r && funct7[5]) | is_b);
+assign i_arith       = o_stall ? 1'b0 : funct7[5];
+assign i_unsigned    = o_stall ? 1'b0 : ((funct3 == 3'b110) | (funct3 == 3'b011) | (funct3 == 3'b111));
+
+
 assign format = is_r ? 6'b000001 : // R-Type
                 (is_i) ? 6'b000010 : // I-Type
                 (is_s) ? 6'b000100 : // S-Type
@@ -109,35 +160,17 @@ assign rs1_raddr = instruction[19:15];
 assign rs2_raddr = instruction[24:20];
 
 // handle retire values
-assign halt = ebreak_valid;
+// added 0 to stall and trap in case we have to flush
+assign halt = o_stall ? 1'b0 : ebreak_valid;
+assign trap = o_stall ? 1'b0 : ~valid;
 assign o_retire_instruction = instruction;
 assign rs1_rdata = (rs1_raddr == 5'd0) ? 32'd0 : reg_data1;
 assign rs2_rdata = (rs2_raddr == 5'd0) ? 32'd0 : reg_data2;
-assign trap = ~valid;
-
-// TODO: HANDLE FLUSHING HERE
 
 // PC values
 assign o_PC = i_PC;
 assign o_PC4 = i_PC + 31'd4;
 
-// mux control signals
-assign is_jalr = jalr_valid;
-assign jump = j_valid | jalr_valid; // J-Type or jalr
-assign branch_eq = (funct3 == 3'b000) | (funct3 == 3'b101)  | (funct3 == 3'b111); // beq, bge(u)
-assign branch_lt = (funct3 == 3'b110) | (funct3 == 3'b100) | (funct3 == 3'b001); // blt(u), bne
-assign branch = b_valid; // is B-Type
-assign mem_read = load_valid; // is load
-assign mem_write = s_valid; // is S-Type
-assign mem_to_reg = load_valid; // is load
-assign alu_src = !(is_r || is_b); // choose imm unless R-Type or B-Type
-assign reg_write = r_valid || i_valid || u_valid || j_valid; // write unless S-Type or B-Type
-assign i_opsel = (r_valid || reg_i_valid) ? instruction[14:12] : 3'b000; // for R-Type and regular I-Type, use funct3; for other types, use ADD
-assign i_sub = (is_r && funct7[5]) | is_b; // sub for R-type, subtract compare for branch
-assign i_arith = funct7[5];
-assign i_unsigned = (funct3 == 3'b110) | (funct3 == 3'b011) | (funct3 == 3'b111);
-assign is_u_instruct = u_valid;
-assign u_type = ~instruction[5];
 
 // generate immediate
 imm i (instruction, format, o_immediate);
