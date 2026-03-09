@@ -218,11 +218,19 @@ module hart #(
 
     assign o_dmem_addr = dmem_addr_w;
     assign o_dmem_mask = dmem_mask_w;
+
+    wire stall;
     
     // **** HANDLE RETIRE *******
     // VALID
     // TODO: 1 if not a flush
-    assign o_retire_valid = 1;
+    reg  valid_D_X_r, valid_X_M_r, valid_M_W_r;
+    wire valid_D_X_w, valid_X_M_w, valid_M_W_w;
+    wire valid_W_F;
+
+    // valid_D_X_w comes from decode — 1 when not a bubble
+    assign valid_D_X_w = ~stall;
+    assign o_retire_valid = valid_W_F;
 
     // TRAP
     // check for traps in stages where we can find a bad instruction and bad addresses
@@ -327,6 +335,11 @@ module hart #(
             target_addr_X_M_r <= 32'd0;
             next_PC_M_W_r <= RESET_ADDR;
 
+            // added for hazard detection
+            valid_D_X_r <= 1'b0;
+            valid_X_M_r <= 1'b0;
+            valid_M_W_r <= 1'b0;
+
             isJALR_D_X_r <= 1'b0;
             isJALR_X_M_r <= 1'b0;
             Jump_D_X_r <= 1'b0;
@@ -419,7 +432,7 @@ module hart #(
             inst_M_W_r <= 32'd0;
             instruction_r <= 32'd0;
         end else begin
-        PC_F_D_r <= PC_F_D_w;
+        PC_F_D_r      <= stall ? PC_F_D_r      : PC_F_D_w;
         PC_D_X_r <= PC_D_X_w;
         PC_X_M_r <= PC_X_M_w;
         PC_M_W_r <= PC_M_W_w;
@@ -429,33 +442,38 @@ module hart #(
         target_addr_X_M_r <= target_addr_X_M_w;
         next_PC_M_W_r <= next_PC_M_W_w;
 
-        isJALR_D_X_r <= isJALR_D_X_w;
         isJALR_X_M_r <= isJALR_X_M_w;
-        Jump_D_X_r <= Jump_D_X_w;
         Jump_X_M_r <= Jump_X_M_w;
         Jump_M_W_r <= Jump_M_W_w;
-        BranchEqual_D_X_r <= BranchEqual_D_X_w;
         BranchEqual_X_M_r <= BranchEqual_X_M_w;
-        BranchLT_D_X_r <= BranchLT_D_X_w;
         BranchLT_X_M_r <= BranchLT_X_M_w;
-        Branch_D_X_r <= Branch_D_X_w;
         Branch_X_M_r <= Branch_X_M_w;
-        MemRead_D_X_r <= MemRead_D_X_w;
         MemRead_X_M_r <= MemRead_X_M_w;
-        MemtoReg_D_X_r <= MemtoReg_D_X_w;
         MemtoReg_X_M_r <= MemtoReg_X_M_w;
         MemtoReg_M_W_r <= MemtoReg_M_W_w;
-        MemWrite_D_X_r <= MemWrite_D_X_w;
-        RegWrite_D_X_r <= RegWrite_D_X_w;
         RegWrite_X_M_r <= RegWrite_X_M_w;
         RegWrite_M_W_r <= RegWrite_M_W_w;
-        UpperType_D_X_r <= UpperType_D_X_w;
-        IsUInstruct_D_X_r <= IsUInstruct_D_X_w;
         IsUInstruct_X_M_r <= IsUInstruct_X_M_w;
         IsUInstruct_M_W_r <= IsUInstruct_M_W_w;
-        ALUSrc_D_X_r <= ALUSrc_D_X_w;
+        RegWrite_D_X_r    <= stall ? 1'b0     : RegWrite_D_X_w;
+        MemRead_D_X_r     <= stall ? 1'b0     : MemRead_D_X_w;
+        MemWrite_D_X_r    <= stall ? 1'b0     : MemWrite_D_X_w;
+        Jump_D_X_r        <= stall ? 1'b0     : Jump_D_X_w;
+        Branch_D_X_r      <= stall ? 1'b0     : Branch_D_X_w;
+        BranchEqual_D_X_r <= stall ? 1'b0     : BranchEqual_D_X_w;
+        BranchLT_D_X_r    <= stall ? 1'b0     : BranchLT_D_X_w;
+        MemtoReg_D_X_r    <= stall ? 1'b0     : MemtoReg_D_X_w;
+        isJALR_D_X_r      <= stall ? 1'b0     : isJALR_D_X_w;
+        rd_waddr_D_X_r    <= stall ? 5'd0     : rd_waddr_D_X_w;
+        halt_D_X_r        <= stall ? 1'b0     : halt_D_X_w;
+        trapD_D_X_r       <= stall ? 1'b0     : trapD_D_X_w;
+        IsUInstruct_D_X_r <= stall ? 1'b0     : IsUInstruct_D_X_w;
+        UpperType_D_X_r   <= stall ? 1'b0     : UpperType_D_X_w;
+        ALUSrc_D_X_r      <= stall ? 1'b0     : ALUSrc_D_X_w;
+        PC_D_X_r          <= stall ? PC_D_X_r : PC_D_X_w;   // hold, not zero
+        PC4_D_X_r         <= stall ? PC4_D_X_r: PC4_D_X_w;  // hold, not zero
 
-        rd_waddr_D_X_r <= rd_waddr_D_X_w;
+
         rd_waddr_X_M_r <= rd_waddr_X_M_w;
         rd_waddr_M_W_r <= rd_waddr_M_W_w;
 
@@ -481,7 +499,6 @@ module hart #(
         dmem_mask_r <= dmem_mask_w;
         reg2_X_M_r <= reg2_X_M_w;
 
-        trapD_D_X_r <= trapD_D_X_w;
         trapD_X_M_r <= trapD_X_M_w;
         trapD_M_W_r <= trapD_M_W_w;
         trapX_X_M_r <= trapX_X_M_w;
@@ -513,13 +530,16 @@ module hart #(
         dmem_wdata_X_M_r <= dmem_wdata_X_M_w;
         dmem_wdata_M_W_r <= dmem_wdata_M_W_w;
 
-        halt_D_X_r <= halt_D_X_w;
         halt_X_M_r <= halt_X_M_w;
         halt_M_W_r <= halt_M_W_w;
-        inst_D_X_r <= inst_D_X_w;
+        inst_D_X_r <= stall ? 32'd0 : inst_D_X_w;
         inst_X_M_r <= inst_X_M_w;
         inst_M_W_r <= inst_M_W_w;
-        instruction_r <= instruction_w;
+        instruction_r <= stall ? instruction_r : instruction_w;
+
+        valid_D_X_r <= stall ? 1'b0    : valid_D_X_w;
+        valid_X_M_r <= valid_D_X_r;
+        valid_M_W_r <= valid_X_M_r;
         end
     end
 
@@ -563,7 +583,7 @@ module hart #(
         halt_D_X_w, inst_D_X_w, trapD_D_X_w,
         rs1_rdata_D_X_w, rs2_rdata_D_X_w,
         // PC
-        PC_F_D_r, PC_D_X_w, PC4_D_X_w
+        PC_F_D_r, PC_D_X_w, PC4_D_X_w,
         //harzard detection stuff
         RegWrite_D_X_r, rd_waddr_D_X_r,   // EX stage
         RegWrite_X_M_r, rd_waddr_X_M_r,   // MEM stage
@@ -664,7 +684,11 @@ module hart #(
         rs1_raddr_W_F, rs2_raddr_W_F,
         trapX_W_F,
         dmem_mask_W_F, dmem_addr_W_F, dmem_wdata_W_F,
-        dmem_ren_W_F, dmem_wen_W_F, dmem_rdata_W_F
+        dmem_ren_W_F, dmem_wen_W_F, dmem_rdata_W_F,
+
+        //new input
+        valid_M_W_r,   // new input
+        valid_W_F
     );
 
 endmodule

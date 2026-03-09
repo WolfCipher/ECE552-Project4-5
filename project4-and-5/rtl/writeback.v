@@ -48,6 +48,10 @@ module writeback(
     output wire o_dmem_ren,
     output wire o_dmem_wen,
     output wire [31:0] o_dmem_rdata
+
+    //added 
+    input  wire        i_valid,
+    output wire        o_valid
 );
     // determine value to write back
     assign dest_result = i_Jump ? (i_PC + 32'd4) : (i_IsUInstruct ? i_uimm : (i_MemtoReg ? read_data : read_alu));
@@ -74,6 +78,8 @@ module writeback(
     assign o_dmem_ren = i_dmem_ren;
     assign o_dmem_wen = i_dmem_wen;
     assign o_dmem_rdata = i_dmem_rdata;
+    assign o_valid = i_valid;
+
 
 endmodule
 
