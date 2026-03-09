@@ -47,7 +47,7 @@ module writeback(
     output wire [31:0] o_dmem_wdata,
     output wire o_dmem_ren,
     output wire o_dmem_wen,
-    output wire [31:0] o_dmem_rdata
+    output wire [31:0] o_dmem_rdata,
 
     //added 
     input  wire        i_valid,

@@ -613,12 +613,14 @@ module hart #(
         halt_D_X_r, inst_D_X_r, trapD_D_X_r,
         rs1_rdata_D_X_r, rs2_rdata_D_X_r,
         rs1_raddr_D_X_r, rs2_raddr_D_X_r,
+        valid_D_X_r,
         // output retire instructions
         halt_X_M_w, inst_X_M_w, trapD_X_M_w,
         rs1_rdata_X_M_w, rs2_rdata_X_M_w,
         rs1_raddr_X_M_w, rs2_raddr_X_M_w,
         trapX_X_M_w,
-        dmem_wdata_X_M_w, dmem_wen_X_M_w
+        dmem_wdata_X_M_w, dmem_wen_X_M_w,
+        valid_X_M_w
     );
 
     memory m (
@@ -646,13 +648,15 @@ module hart #(
         rs1_raddr_X_M_r, rs2_raddr_X_M_r,
         trapX_X_M_r,
         dmem_wdata_X_M_r, dmem_wen_X_M_r,
+        valid_X_M_r,
         // output retire instructions
         halt_M_W_w, inst_M_W_w, trapD_M_W_w,
         rs1_rdata_M_W_w, rs2_rdata_M_W_w,
         rs1_raddr_M_W_w, rs2_raddr_M_W_w,
         trapX_M_W_w,
         dmem_mask_M_W_w, dmem_addr_M_W_w, dmem_wdata_M_W_w,
-        dmem_ren_M_W_w, dmem_wen_M_W_w, dmem_rdata_M_W_w
+        dmem_ren_M_W_w, dmem_wen_M_W_w, dmem_rdata_M_W_w,
+        valid_M_W_w
     );
 
 

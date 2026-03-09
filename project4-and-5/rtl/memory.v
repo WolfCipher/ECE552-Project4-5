@@ -53,6 +53,7 @@ module memory(
     input wire i_trapX,
     input wire [31:0] i_dmem_wdata,
     input wire i_dmem_wen,
+    input wire i_valid,
     // Output Retire Instructions
     output wire o_halt,
     output wire [31:0] o_inst,
@@ -67,7 +68,8 @@ module memory(
     output wire [31:0] o_dmem_wdata,
     output wire o_dmem_ren_retire,
     output wire o_dmem_wen,
-    output wire [31:0] o_dmem_rdata
+    output wire [31:0] o_dmem_rdata,
+    output wire o_valid
 );
 
     // determine PC
@@ -141,6 +143,7 @@ module memory(
     assign o_reg1 = i_reg1;
     assign o_reg2 = i_reg2_retire;
     assign o_trapX = i_trapX;
+    assign o_valid = i_valid;
 
     assign o_dmem_wdata = i_dmem_wdata;
     assign o_dmem_wen = i_dmem_wen;

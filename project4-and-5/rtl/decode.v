@@ -53,6 +53,7 @@ module decode (
 );
 
 // see if rs1 and rs2 are actually used
+wire r_valid, i_valid, s_valid, b_valid, u_valid, j_valid, ebreak_valid;
 wire uses_rs1, uses_rs2;
 assign uses_rs1 = r_valid || i_valid || s_valid || b_valid;
 assign uses_rs2 = r_valid || s_valid || b_valid;
@@ -93,7 +94,6 @@ assign is_b = (opcode == 7'b1100011);
 assign is_u = (opcode == 7'b0010111) || (opcode == 7'b0110111);
 assign is_j = (opcode == 7'b1101111);
 
-wire r_valid, i_valid, s_valid, b_valid, u_valid, j_valid, ebreak_valid;
 wire reg_i_valid, load_valid, jalr_valid;
 wire valid;
 

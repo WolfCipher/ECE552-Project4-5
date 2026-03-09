@@ -1,5 +1,9 @@
+Reading pref.tcl
+
+# 2020.1
+
 # vsim -c work.hart_tb "+MEM=sort.mem" -do "run -all; quit -f" 
-# Start time: 10:40:02 on Mar 09,2026
+# Start time: 10:34:05 on Mar 09,2026
 # Loading work.hart_tb
 # Loading work.hart
 # Loading work.rf
@@ -309,5 +313,6 @@
 # [000001X8] xxxxxxxx r[ x]=xxxxxxxx r[ x]=xxxxxxxx 
 # ** Note: $finish    : ./tb.v(181)
 #    Time: 400 us  Iteration: 1  Instance: /hart_tb
-# End time: 10:40:04 on Mar 09,2026, Elapsed time: 0:00:02
+# End time: 10:34:06 on Mar 09,2026, Elapsed time: 0:00:01
 # Errors: 0, Warnings: 0
+

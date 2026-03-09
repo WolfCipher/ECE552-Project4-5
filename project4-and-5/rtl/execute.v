@@ -62,6 +62,7 @@ module execute(
     input wire [31:0] i_reg2,
     input wire [4:0] i_rs1,
     input wire [4:0] i_rs2,
+    input wire i_valid,
     // Output Retire Instructions
     output wire o_halt,
     output wire [31:0] o_inst,
@@ -72,7 +73,8 @@ module execute(
     output wire [4:0] o_rs2,
     output wire o_trapX,
     output wire [31:0] dmem_wdata,
-    output wire dmem_wen
+    output wire dmem_wen,
+    output wire o_valid
 );
 
     // ALU
@@ -154,6 +156,7 @@ module execute(
     assign o_rs2 = i_rs2;
     assign dmem_wdata = mem_wdata;
     assign dmem_wen = i_MemWrite;
+    assign o_valid = i_valid;
 
 endmodule
 
