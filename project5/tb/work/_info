@@ -1,0 +1,402 @@
+m255
+K4
+z2
+!s11f vlog 2020.1 2020.02, Feb 28 2020
+13
+!s112 1.1
+!i10d 8192
+!i10e 25
+!i10f 100
+cModel Technology
+Z0 dC:/Users/minec/Pictures/Documents/UW/ECE552/ECE552-Project4-5/project4-and-5/tb
+vadder
+Z1 !s110 1773070729
+!i10b 1
+!s100 7iAHOGj@QRYT5z4LBS2Cd0
+Z2 !s11b Dg1SIo80bB@j0V0VzS_@n1
+I_i>f>bY<Qeh7W;mMTOZz_1
+Z3 VDg1SIo80bB@j0V0VzS_@n1
+R0
+Z4 w1772062389
+Z5 8..\..\project2\alu.v
+Z6 F..\..\project2\alu.v
+!i122 22
+L0 73 10
+Z7 OV;L;2020.1;71
+r1
+!s85 0
+31
+Z8 !s108 1773070728.000000
+Z9 !s107 .\tb.v|..\rtl\hart.v|..\rtl\writeback.v|..\rtl\memory.v|..\rtl\execute.v|..\rtl\decode.v|..\rtl\fetch.v|..\..\project2\rf.v|..\..\project2\imm.v|..\..\project2\alu.v|
+Z10 !s90 -quiet|-work|work|..\..\project2\alu.v|..\..\project2\imm.v|..\..\project2\rf.v|..\rtl\fetch.v|..\rtl\decode.v|..\rtl\execute.v|..\rtl\memory.v|..\rtl\writeback.v|..\rtl\hart.v|.\tb.v|
+!i113 1
+Z11 o-quiet -work work
+Z12 tCvgOpt 0
+valu
+R1
+!i10b 1
+!s100 ]VzJXD?GOnXMdJWROfNP^2
+R2
+INn99WV0j4RFd?C3PLYcbC2
+R3
+R0
+R4
+R5
+R6
+!i122 22
+L0 8 64
+R7
+r1
+!s85 0
+31
+R8
+R9
+R10
+!i113 1
+R11
+R12
+vand32
+R1
+!i10b 1
+!s100 Y4L6B_CTM7AN68T7e2QP:2
+R2
+IIG2I3da2N2n1cVYVa2?@G1
+R3
+R0
+R4
+R5
+R6
+!i122 22
+L0 203 7
+R7
+r1
+!s85 0
+31
+R8
+R9
+R10
+!i113 1
+R11
+R12
+vdecode
+Z13 !s110 1773193961
+!i10b 1
+!s100 o9ZB5gS8XgXSANH4451oh1
+R2
+I`D1c@k8SXo8]=5oF58mPK2
+R3
+R0
+w1773156564
+8../rtl/decode.v
+F../rtl/decode.v
+!i122 25
+L0 2 180
+R7
+r1
+!s85 0
+31
+Z14 !s108 1773193961.000000
+!s107 tb.v|../../project2/rf.v|../rtl/hart.v|../rtl/writeback.v|../rtl/memory.v|../rtl/execute.v|../rtl/decode.v|../rtl/fetch.v|
+Z15 !s90 -work|work|../rtl/fetch.v|../rtl/decode.v|../rtl/execute.v|../rtl/memory.v|../rtl/writeback.v|../rtl/hart.v|../../project2/rf.v|tb.v|
+!i113 1
+Z16 o-work work
+R12
+vexecute
+R13
+!i10b 1
+!s100 g_kUZ:Z7AMdbH:AfW9<lD3
+R2
+I2^]Mb_TeCCV16`2W64CSF1
+R3
+R0
+w1773193806
+8../rtl/execute.v
+F../rtl/execute.v
+!i122 25
+L0 3 170
+R7
+r1
+!s85 0
+31
+R14
+Z17 !s107 tb.v|../../project2/rf.v|../rtl/hart.v|../rtl/writeback.v|../rtl/memory.v|../rtl/execute.v|../rtl/decode.v|../rtl/fetch.v|
+R15
+!i113 1
+R16
+R12
+vfetch
+R13
+!i10b 1
+!s100 A=J0aFJnebZQ`na;^;bgV3
+R2
+IPWB8:9jOZD32LzjITmEaN0
+R3
+R0
+w1772925059
+8../rtl/fetch.v
+F../rtl/fetch.v
+!i122 25
+L0 2 25
+R7
+r1
+!s85 0
+31
+R14
+R17
+R15
+!i113 1
+R16
+R12
+vhart
+R13
+!i10b 1
+!s100 kS=mhUYiLB^1hX;FI_0KM3
+R2
+IS67EnJ6LzXN^COA5Y^E]L2
+R3
+R0
+w1773193907
+8../rtl/hart.v
+F../rtl/hart.v
+!i122 25
+L0 1 737
+R7
+r1
+!s85 0
+31
+R14
+R17
+R15
+!i113 1
+R16
+R12
+vhart_tb
+R13
+!i10b 1
+!s100 UP>mef9HIAjHR6Hz@LGOB2
+R2
+I@I[5PSIJh7=AFU4EAX>C73
+R3
+R0
+w1772916429
+8tb.v
+Ftb.v
+!i122 25
+L0 2 185
+R7
+r1
+!s85 0
+31
+R14
+R17
+R15
+!i113 1
+R16
+R12
+vimm
+R1
+!i10b 1
+!s100 ClRCdzdXia@f:YS2GZSWE0
+R2
+IAngBVE1@@b>d2FhQ`LikY1
+R3
+R0
+w1772067206
+8..\..\project2\imm.v
+F..\..\project2\imm.v
+!i122 22
+L0 6 47
+R7
+r1
+!s85 0
+31
+R8
+R9
+R10
+!i113 1
+R11
+R12
+vmemory
+R13
+!i10b 1
+!s100 hoAA3@FN6`MV^iY[NG<0X0
+R2
+I>`;]24iXWaNkR:Jj25;]E0
+R3
+R0
+w1773192041
+8../rtl/memory.v
+F../rtl/memory.v
+!i122 25
+L0 2 154
+R7
+r1
+!s85 0
+31
+R14
+R17
+R15
+!i113 1
+R16
+R12
+vor32
+R1
+!i10b 1
+!s100 UV>G77jz:Ilf?gXGkW=eQ0
+R2
+ILE;2P:cc5N93P=@>98D?o3
+R3
+R0
+R4
+R5
+R6
+!i122 22
+L0 195 7
+R7
+r1
+!s85 0
+31
+R8
+R9
+R10
+!i113 1
+R11
+R12
+vrf
+R13
+!i10b 1
+!s100 PNlNRP0;JL^WB>_[7=O@b3
+R2
+IK0DQ3JAK?0k_@0]`33>z`2
+R3
+R0
+w1773193467
+8../../project2/rf.v
+F../../project2/rf.v
+!i122 25
+L0 8 96
+R7
+r1
+!s85 0
+31
+R14
+R17
+R15
+!i113 1
+R16
+R12
+vsll
+R1
+!i10b 1
+!s100 gVIIAf;JbOWS=jeggZKDc3
+R2
+Ic^zRf@jIQ?[XUk`RG<J003
+R3
+R0
+R4
+R5
+R6
+!i122 22
+L0 84 38
+R7
+r1
+!s85 0
+31
+R8
+R9
+R10
+!i113 1
+R11
+R12
+vslt
+R1
+!i10b 1
+!s100 Cg5PnhHL2WAgRIHRQW?W;3
+R2
+I7i3>gmHc_?d3DRCN_IMB73
+R3
+R0
+R4
+R5
+R6
+!i122 22
+L0 123 20
+R7
+r1
+!s85 0
+31
+R8
+R9
+R10
+!i113 1
+R11
+R12
+vsr
+R1
+!i10b 1
+!s100 NfAi4J3f_hMd`1W]FZ=zY0
+R2
+IOCObzDK4VY?C;G<[>OV_V2
+R3
+R0
+R4
+R5
+R6
+!i122 22
+L0 152 42
+R7
+r1
+!s85 0
+31
+R8
+R9
+R10
+!i113 1
+R11
+R12
+vwriteback
+R13
+!i10b 1
+!s100 JX9PnmIG@6h1T0X;A^BAj0
+R2
+I5?a28HTz99eHQQ?4h[c7;1
+R3
+R0
+w1773076335
+8../rtl/writeback.v
+F../rtl/writeback.v
+!i122 25
+L0 1 84
+R7
+r1
+!s85 0
+31
+R14
+R17
+R15
+!i113 1
+R16
+R12
+vxor32
+R1
+!i10b 1
+!s100 E2UAjLK24BDKbPh^[M>lM0
+R2
+Io^SaQIf80]H6^g^R7gL9`2
+R3
+R0
+R4
+R5
+R6
+!i122 22
+L0 144 7
+R7
+r1
+!s85 0
+31
+R8
+R9
+R10
+!i113 1
+R11
+R12
