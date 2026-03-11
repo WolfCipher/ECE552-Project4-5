@@ -19,7 +19,7 @@ module execute(
     output wire o_slt,
     output wire [31:0] target_addr,
     output wire [31:0] o_PC,
-    output wire [31:0] o_PC4,
+    output wire [31:0] o_next_PC,
     // signals for proper memory access
     output wire o_unsigned, // for memory
     output wire [3:0] o_mask, // for memory
@@ -84,8 +84,20 @@ module execute(
 
     alu op (i_opsel, i_sub, i_unsigned, i_arith, i_op1, i_op2, o_result, o_eq, o_slt);
 
-    // branch or jump target address
+    // determine PC
     assign target_addr = i_isJALR ? (reg1 + imm) : (i_PC + imm);
+
+    wire [31:0] muxed_target;
+    assign muxed_target = i_isJALR ? {target_addr[31:1], 1'b0} : target_addr;
+
+    wire branch_taken;
+    assign branch_taken = ((i_BranchEqual & o_eq) | // beq
+                            (i_BranchLT & o_slt) |  // blt(u)
+                            (~i_BranchLT & ~o_slt & ~i_BranchEqual) | // bge(u)
+                            (~i_BranchEqual & ~o_eq & ~i_BranchLT)) // bne
+                        & i_Branch;
+
+    assign o_next_PC = (branch_taken || i_Jump) ? muxed_target : i_PC4;
 
     // U-type immediate
     assign o_uimm = i_UpperType ? target_addr : imm;
@@ -132,7 +144,6 @@ module execute(
 
     // pass through stage
     assign o_PC = i_PC;
-    assign o_PC4 = i_PC4;
     assign o_isJALR = i_isJALR;
     assign o_Jump = i_Jump;
     assign o_BranchEqual = i_BranchEqual;
@@ -155,7 +166,7 @@ module execute(
     assign o_rs1 = i_rs1;
     assign o_rs2 = i_rs2;
     assign dmem_wdata = mem_wdata;
-    assign dmem_wen = i_MemWrite;
+    assign dmem_wen = i_MemWrite & i_valid;
     assign o_valid = i_valid;
 
 endmodule

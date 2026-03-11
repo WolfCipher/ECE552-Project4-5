@@ -27,11 +27,11 @@ r1
 !s85 0
 31
 Z8 !s108 1773070728.000000
-!s107 .\tb.v|..\rtl\hart.v|..\rtl\writeback.v|..\rtl\memory.v|..\rtl\execute.v|..\rtl\decode.v|..\rtl\fetch.v|..\..\project2\rf.v|..\..\project2\imm.v|..\..\project2\alu.v|
-Z9 !s90 -quiet|-work|work|..\..\project2\alu.v|..\..\project2\imm.v|..\..\project2\rf.v|..\rtl\fetch.v|..\rtl\decode.v|..\rtl\execute.v|..\rtl\memory.v|..\rtl\writeback.v|..\rtl\hart.v|.\tb.v|
+Z9 !s107 .\tb.v|..\rtl\hart.v|..\rtl\writeback.v|..\rtl\memory.v|..\rtl\execute.v|..\rtl\decode.v|..\rtl\fetch.v|..\..\project2\rf.v|..\..\project2\imm.v|..\..\project2\alu.v|
+Z10 !s90 -quiet|-work|work|..\..\project2\alu.v|..\..\project2\imm.v|..\..\project2\rf.v|..\rtl\fetch.v|..\rtl\decode.v|..\rtl\execute.v|..\rtl\memory.v|..\rtl\writeback.v|..\rtl\hart.v|.\tb.v|
 !i113 1
-Z10 o-quiet -work work
-Z11 tCvgOpt 0
+Z11 o-quiet -work work
+Z12 tCvgOpt 0
 valu
 R1
 !i10b 1
@@ -50,11 +50,11 @@ r1
 !s85 0
 31
 R8
-Z12 !s107 .\tb.v|..\rtl\hart.v|..\rtl\writeback.v|..\rtl\memory.v|..\rtl\execute.v|..\rtl\decode.v|..\rtl\fetch.v|..\..\project2\rf.v|..\..\project2\imm.v|..\..\project2\alu.v|
 R9
-!i113 1
 R10
+!i113 1
 R11
+R12
 vand32
 R1
 !i10b 1
@@ -73,126 +73,126 @@ r1
 !s85 0
 31
 R8
-R12
 R9
-!i113 1
 R10
+!i113 1
 R11
+R12
 vdecode
-R1
+Z13 !s110 1773193961
 !i10b 1
 !s100 o9ZB5gS8XgXSANH4451oh1
 R2
-Izz>gmLA0M4QKe;b<ON]9g3
+I`D1c@k8SXo8]=5oF58mPK2
 R3
 R0
-w1773070020
-8..\rtl\decode.v
-F..\rtl\decode.v
-!i122 22
+w1773156564
+8../rtl/decode.v
+F../rtl/decode.v
+!i122 25
 L0 2 180
 R7
 r1
 !s85 0
 31
-R8
-R12
-R9
+Z14 !s108 1773193961.000000
+!s107 tb.v|../../project2/rf.v|../rtl/hart.v|../rtl/writeback.v|../rtl/memory.v|../rtl/execute.v|../rtl/decode.v|../rtl/fetch.v|
+Z15 !s90 -work|work|../rtl/fetch.v|../rtl/decode.v|../rtl/execute.v|../rtl/memory.v|../rtl/writeback.v|../rtl/hart.v|../../project2/rf.v|tb.v|
 !i113 1
-R10
-R11
+Z16 o-work work
+R12
 vexecute
-R1
+R13
 !i10b 1
-!s100 oWJU2oY2TUTA2=i[n11nZ3
+!s100 g_kUZ:Z7AMdbH:AfW9<lD3
 R2
-IDLNjW6R0z28e;]1Y`ckfM2
+I2^]Mb_TeCCV16`2W64CSF1
 R3
 R0
-w1773070628
-8..\rtl\execute.v
-F..\rtl\execute.v
-!i122 22
-L0 3 159
+w1773193806
+8../rtl/execute.v
+F../rtl/execute.v
+!i122 25
+L0 3 170
 R7
 r1
 !s85 0
 31
-R8
-R12
-R9
+R14
+Z17 !s107 tb.v|../../project2/rf.v|../rtl/hart.v|../rtl/writeback.v|../rtl/memory.v|../rtl/execute.v|../rtl/decode.v|../rtl/fetch.v|
+R15
 !i113 1
-R10
-R11
+R16
+R12
 vfetch
-R1
+R13
 !i10b 1
 !s100 A=J0aFJnebZQ`na;^;bgV3
 R2
-IPYjXGLOZ9YZ5OA?2Db>Qd1
+IPWB8:9jOZD32LzjITmEaN0
 R3
 R0
 w1772925059
-8..\rtl\fetch.v
-F..\rtl\fetch.v
-!i122 22
+8../rtl/fetch.v
+F../rtl/fetch.v
+!i122 25
 L0 2 25
 R7
 r1
 !s85 0
 31
-R8
-R12
-R9
+R14
+R17
+R15
 !i113 1
-R10
-R11
+R16
+R12
 vhart
-R1
+R13
 !i10b 1
-!s100 d;eUdNCRD=TBz[P?=Snlo3
+!s100 kS=mhUYiLB^1hX;FI_0KM3
 R2
-I]dShZ_Qlnnc61Wmn`>43H3
+IS67EnJ6LzXN^COA5Y^E]L2
 R3
 R0
-w1773070724
-8..\rtl\hart.v
-F..\rtl\hart.v
-!i122 22
-L0 1 698
+w1773193907
+8../rtl/hart.v
+F../rtl/hart.v
+!i122 25
+L0 1 737
 R7
 r1
 !s85 0
 31
-R8
-R12
-R9
+R14
+R17
+R15
 !i113 1
-R10
-R11
+R16
+R12
 vhart_tb
-R1
+R13
 !i10b 1
 !s100 UP>mef9HIAjHR6Hz@LGOB2
 R2
-I<AT@lD`dAaOgE[E[6kehe3
+I@I[5PSIJh7=AFU4EAX>C73
 R3
 R0
 w1772916429
-8.\tb.v
-F.\tb.v
-!i122 22
+8tb.v
+Ftb.v
+!i122 25
 L0 2 185
 R7
 r1
 !s85 0
 31
-R8
-R12
-R9
+R14
+R17
+R15
 !i113 1
-R10
-R11
+R16
+R12
 vimm
 R1
 !i10b 1
@@ -211,34 +211,34 @@ r1
 !s85 0
 31
 R8
-R12
 R9
-!i113 1
 R10
+!i113 1
 R11
+R12
 vmemory
-R1
+R13
 !i10b 1
-!s100 7i<8Fl^9S?A64n@FjM4SM3
+!s100 hoAA3@FN6`MV^iY[NG<0X0
 R2
-I6Kz:2zFZlXDTloPea>oVT3
+I>`;]24iXWaNkR:Jj25;]E0
 R3
 R0
-w1773070653
-8..\rtl\memory.v
-F..\rtl\memory.v
-!i122 22
+w1773192041
+8../rtl/memory.v
+F../rtl/memory.v
+!i122 25
 L0 2 154
 R7
 r1
 !s85 0
 31
-R8
-R12
-R9
+R14
+R17
+R15
 !i113 1
-R10
-R11
+R16
+R12
 vor32
 R1
 !i10b 1
@@ -257,34 +257,34 @@ r1
 !s85 0
 31
 R8
-R12
 R9
-!i113 1
 R10
+!i113 1
 R11
+R12
 vrf
-R1
+R13
 !i10b 1
-!s100 b>103ZSHi;8NjL5L0;?Vz2
+!s100 PNlNRP0;JL^WB>_[7=O@b3
 R2
-Ib`M>MhzN`f6m;YYB3AKX>2
+IK0DQ3JAK?0k_@0]`33>z`2
 R3
 R0
-w1771992139
-8..\..\project2\rf.v
-F..\..\project2\rf.v
-!i122 22
-L0 8 95
+w1773193467
+8../../project2/rf.v
+F../../project2/rf.v
+!i122 25
+L0 8 96
 R7
 r1
 !s85 0
 31
-R8
-R12
-R9
+R14
+R17
+R15
 !i113 1
-R10
-R11
+R16
+R12
 vsll
 R1
 !i10b 1
@@ -303,11 +303,11 @@ r1
 !s85 0
 31
 R8
-R12
 R9
-!i113 1
 R10
+!i113 1
 R11
+R12
 vslt
 R1
 !i10b 1
@@ -326,11 +326,11 @@ r1
 !s85 0
 31
 R8
-R12
 R9
-!i113 1
 R10
+!i113 1
 R11
+R12
 vsr
 R1
 !i10b 1
@@ -349,34 +349,34 @@ r1
 !s85 0
 31
 R8
-R12
 R9
-!i113 1
 R10
+!i113 1
 R11
+R12
 vwriteback
-R1
+R13
 !i10b 1
 !s100 JX9PnmIG@6h1T0X;A^BAj0
 R2
-IZ>:N570iSo:HQQ^=lQkei1
+I5?a28HTz99eHQQ?4h[c7;1
 R3
 R0
-w1773070125
-8..\rtl\writeback.v
-F..\rtl\writeback.v
-!i122 22
+w1773076335
+8../rtl/writeback.v
+F../rtl/writeback.v
+!i122 25
 L0 1 84
 R7
 r1
 !s85 0
 31
-R8
-R12
-R9
+R14
+R17
+R15
 !i113 1
-R10
-R11
+R16
+R12
 vxor32
 R1
 !i10b 1
@@ -395,8 +395,8 @@ r1
 !s85 0
 31
 R8
-R12
 R9
-!i113 1
 R10
+!i113 1
 R11
+R12

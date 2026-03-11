@@ -48,8 +48,9 @@ module rf #(
     assign bypass2 = BYPASS_EN ? (i_rs2_raddr == i_rd_waddr) && (i_rd_waddr != 0) : 0;
 
     // always read registers
-    assign o_rs1_rdata = bypass1 ? i_rd_wdata : reg_file[i_rs1_raddr];
-    assign o_rs2_rdata = bypass2 ? i_rd_wdata : reg_file[i_rs2_raddr];
+    // x0 is architecturally hardwired to zero on reads regardless of storage.
+    assign o_rs1_rdata = (i_rs1_raddr == 5'd0) ? 32'd0 : (bypass1 ? i_rd_wdata : reg_file[i_rs1_raddr]);
+    assign o_rs2_rdata = (i_rs2_raddr == 5'd0) ? 32'd0 : (bypass2 ? i_rd_wdata : reg_file[i_rs2_raddr]);
 
     integer i;
 
@@ -89,13 +90,13 @@ module rf #(
             reg_file[29] <= 32'd0;
             reg_file[30] <= 32'd0;
             reg_file[31] <= 32'd0;
+        end else begin
+            // only write if write enabled
+            // ignore writes to register zero
+            if (i_rd_wen == 1)
+                if(i_rd_waddr != 0)
+                    reg_file[i_rd_waddr] <= i_rd_wdata;
         end
-
-        // only write if write enabled
-        // ignore writes to register zero
-        if (i_rd_wen == 1)
-            if(i_rd_waddr != 0)
-                reg_file[i_rd_waddr] <= i_rd_wdata;
 
     end
 

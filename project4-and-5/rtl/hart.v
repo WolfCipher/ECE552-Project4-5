@@ -141,12 +141,12 @@ module hart #(
     // PC signals
     reg [31:0] PC_F_D_r, PC_D_X_r, PC_X_M_r, PC_M_W_r; // before adding 4
     reg [31:0] PC4_D_X_r, PC4_X_M_r, PC4_M_W_r; // after adding 4
-    reg [31:0] target_addr_X_M_r; // PC + target_addr
+    reg [31:0] target_addr_D_X_r; // PC + target_addr
     reg [31:0] next_PC_M_W_r; // output of branch/jump logic
     
     wire [31:0] PC_F_D_w, PC_D_X_w, PC_X_M_w, PC_M_W_w; // before adding 4
     wire [31:0] PC4_D_X_w, PC4_X_M_w, PC4_M_W_w; // after adding 4
-    wire [31:0] target_addr_X_M_w; // PC + target_addr
+    wire [31:0] target_addr_D_X_w; // PC + target_addr
     wire [31:0] next_PC_M_W_w, next_PC_W_F; // output of branch/jump logic
 
     // Mux Signals
@@ -218,16 +218,15 @@ module hart #(
 
     wire [31:0] dmem_wdata_ex_w;
     wire        dmem_wen_ex_w;
-
-    assign dmem_wdata_X_M_w = dmem_wdata_ex_w;
-    assign dmem_wen_X_M_w   = dmem_wen_ex_w;
+    reg [31:0] dmem_wdata_ex_r;
+    reg        dmem_wen_ex_r;
 
     // Drive the external dmem interface from the MEM stage (registered) signals.
     // Reads are combinational off of the address + ren, writes occur on the next clock edge.
     assign o_dmem_addr  = dmem_addr_r;
     assign o_dmem_mask  = dmem_mask_r;
-    assign o_dmem_wdata = dmem_wdata_X_M_r;
-    assign o_dmem_wen   = dmem_wen_X_M_r;
+    assign o_dmem_wdata = dmem_wdata_ex_r;
+    assign o_dmem_wen   = dmem_wen_ex_r;
 
     wire stall;
     
@@ -338,23 +337,23 @@ module hart #(
 
     wire [31:0] next_PC_to_fetch;
 
-    wire branch_taken_M;
-    assign branch_taken_M = ((BranchEqual_X_M_r & eq_r) | // beq
-                             (BranchLT_X_M_r & slt_r) |  // blt(u)
-                             (~BranchLT_X_M_r & ~slt_r & ~BranchEqual_X_M_r) | // bge(u)
-                             (~BranchEqual_X_M_r & ~eq_r & ~BranchLT_X_M_r)) // bne
-                            & Branch_X_M_r;
+    wire branch_taken_X;
+    assign branch_taken_X = ((BranchEqual_D_X_r & eq_w) | // beq
+                             (BranchLT_D_X_r & slt_w) |  // blt(u)
+                             (~BranchLT_D_X_r & ~slt_w & ~BranchEqual_D_X_r) | // bge(u)
+                             (~BranchEqual_D_X_r & ~eq_w & ~BranchLT_D_X_r)) // bne
+                            & Branch_D_X_r;
 
-    wire redirect_M;
-    assign redirect_M = valid_X_M_r & (Jump_X_M_r | branch_taken_M);
+    wire redirect_X;
+    assign redirect_X = valid_D_X_r & (Jump_D_X_r | branch_taken_X);
 
     wire flush;
-    assign flush = redirect_M;
+    assign flush = redirect_X;
 
-    wire [31:0] redirect_target_M;
-    assign redirect_target_M = isJALR_X_M_r ? {target_addr_X_M_r[31:1], 1'b0} : target_addr_X_M_r;
+    wire [31:0] redirect_target_X;
+    assign redirect_target_X = isJALR_D_X_r ? {target_addr_D_X_w[31:1], 1'b0} : target_addr_D_X_w;
 
-    assign next_PC_to_fetch = stall ? o_imem_raddr : (redirect_M ? redirect_target_M : (o_imem_raddr + 32'd4));
+    assign next_PC_to_fetch = stall ? o_imem_raddr : (redirect_X ? redirect_target_X : (o_imem_raddr + 32'd4));
 
     // Capture all stage-register values from their companion _w nets.
     always @(posedge i_clk) begin
@@ -366,7 +365,7 @@ module hart #(
             PC4_D_X_r <= 32'd0;
             PC4_X_M_r <= 32'd0;
             PC4_M_W_r <= 32'd0;
-            target_addr_X_M_r <= 32'd0;
+            target_addr_D_X_r <= 32'd0;
             next_PC_M_W_r <= RESET_ADDR;
 
             // added for hazard detection
@@ -458,6 +457,8 @@ module hart #(
             dmem_mask_M_W_r <= 4'd0;
             dmem_wdata_X_M_r <= 32'd0;
             dmem_wdata_M_W_r <= 32'd0;
+            dmem_wdata_ex_r <= 32'd0;
+            dmem_wen_ex_r <= 1'b0;
 
             halt_D_X_r <= 1'b0;
             halt_X_M_r <= 1'b0;
@@ -475,7 +476,7 @@ module hart #(
         PC4_D_X_r <= PC4_D_X_w;
         PC4_X_M_r <= PC4_X_M_w;
         PC4_M_W_r <= PC4_M_W_w;
-        target_addr_X_M_r <= target_addr_X_M_w;
+        target_addr_D_X_r <= target_addr_D_X_w;
         next_PC_M_W_r <= next_PC_M_W_w;
 
         isJALR_X_M_r <= isJALR_X_M_w;
@@ -565,6 +566,8 @@ module hart #(
         dmem_mask_M_W_r <= dmem_mask_M_W_w;
         dmem_wdata_X_M_r <= dmem_wdata_X_M_w;
         dmem_wdata_M_W_r <= dmem_wdata_M_W_w;
+        dmem_wdata_ex_r <= dmem_wdata_ex_w;
+        dmem_wen_ex_r <= dmem_wen_ex_w;
 
         halt_X_M_r <= halt_X_M_w;
         halt_M_W_r <= halt_M_W_w;
@@ -632,7 +635,7 @@ module hart #(
         // ALU inputs
         reg1_r, reg2_r, imm_r, funct3_r, i_opsel_r, i_sub_r, i_unsigned_r, i_arith_r,
         // signals related to PC, branch, and ALU
-        PC_D_X_r, PC4_D_X_r, ALU_X_M_w, eq_w, slt_w, target_addr_X_M_w, PC_X_M_w, PC4_X_M_w,
+        PC_D_X_r, PC4_D_X_r, ALU_X_M_w, eq_w, slt_w, target_addr_D_X_w, PC_X_M_w, PC4_X_M_w,
         // signals for proper memory access
         mem_unsigned_w, dmem_mask_w, dmem_addr_w, dmem_wdata_ex_w, reg2_X_M_w,
         // input mux signals
@@ -666,7 +669,7 @@ module hart #(
         // ALU signal
         ALU_X_M_r,
         // Branch and PC signals
-        eq_r, slt_r, target_addr_X_M_r, PC_X_M_r, PC4_X_M_r, PC_M_W_w, next_PC_M_W_w,
+        eq_r, slt_r, target_addr_D_X_r, PC_X_M_r, PC4_X_M_r, PC_M_W_w, //next_PC_M_W_w,
         // Results to choose between in WB stage
         mem_read_M_W_w, ALU_M_W_w, uimm_M_W_w,
         // input Mux signals
