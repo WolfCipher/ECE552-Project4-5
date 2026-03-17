@@ -74,13 +74,25 @@ module execute(
     output wire o_trapX,
     output wire [31:0] dmem_wdata,
     output wire dmem_wen,
-    output wire o_valid
+    output wire o_valid,
+    // forwarding
+    input wire [31:0] i_result_M,
+    input wire [31:0] i_result_W,
+    input wire forward_M_reg1,
+    input wire forward_M_reg2,
+    input wire forward_W_reg1,
+    input wire forward_W_reg2
 );
+
+    // Forwarding
+    wire [31:0] reg1_forward, reg2_forward;
+    assign reg1_forward = forward_M_reg1 ? i_result_M : forward_W_reg1 ? i_result_W : reg1;
+    assign reg2_forward = forward_M_reg2 ? i_result_M : forward_W_reg2 ? i_result_W : reg2;
 
     // ALU
     wire [31:0] i_op1, i_op2;
-    assign i_op1 = reg1;
-    assign i_op2 = i_ALUSrc ? imm : reg2;
+    assign i_op1 = reg1_forward;
+    assign i_op2 = i_ALUSrc ? imm : reg2_forward;
 
     alu op (i_opsel, i_sub, i_unsigned, i_arith, i_op1, i_op2, o_result, o_eq, o_slt);
 

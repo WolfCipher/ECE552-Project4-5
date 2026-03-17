@@ -229,6 +229,14 @@ module hart #(
     assign o_dmem_wen   = dmem_wen_ex_r;
 
     wire stall;
+
+    // **** FORWARDING SIGNALS *****
+    // ex-to-ex forwarding
+    wire reg1_ex_forward;
+    wire reg2_ex_forward;
+    // mem-to-ex forwarding
+    wire reg1_mem_forward;
+    wire reg2_mem_forward;
     
     // **** HANDLE RETIRE *******
     // VALID
@@ -659,7 +667,11 @@ module hart #(
         rs1_raddr_X_M_w, rs2_raddr_X_M_w,
         trapX_X_M_w,
         dmem_wdata_X_M_w, dmem_wen_X_M_w,
-        valid_X_M_w
+        valid_X_M_w,
+        // forwarding
+        ALU_M_W_r, wb_data,
+        reg1_ex_forward, reg2_ex_forward,
+        reg1_mem_forward, reg2_mem_forward
     );
 
     memory m (
@@ -732,6 +744,31 @@ module hart #(
         //new input
         valid_M_W_r,   // new input
         valid_W_F
+    );
+
+    ex-ex-forwarding eef (
+        // ex source addresses
+        rs1_raddr_D_X_r, rs2_raddr_D_X_r,
+        // mem destination address
+        rd_waddr_X_M_r,
+        // mem signals
+        RegWrite_X_M_r,
+        MemRead_X_M_r,
+        // forwarding results
+        reg1_ex_forward,
+        reg2_ex_forward
+    );
+
+    mem-ex-forwarding mef (
+        // ex source addresses
+        rs1_raddr_D_X_r, rs2_raddr_D_X_r,
+        // mem destination address
+        rd_waddr_M_W_r,
+        // mem signals
+        RegWrite_M_W_r,
+        // forwarding results
+        reg1_mem_forward,
+        reg2_mem_forward
     );
 
 endmodule
