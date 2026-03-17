@@ -1,4 +1,4 @@
-module mem-ex-forwarding (
+module memExForwarding (
     input wire [4:0] rs1_addr,
     input wire [4:0] rs2_addr,
     input wire [4:0] rd_addr_W,

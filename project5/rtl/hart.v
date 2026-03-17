@@ -671,7 +671,7 @@ module hart #(
         dmem_wdata_X_M_w, dmem_wen_X_M_w,
         valid_X_M_w,
 
-        branch_taken //added for branch control
+        branch_taken, //added for branch control
 
         // forwarding
         ALU_M_W_r, wb_data,
@@ -751,7 +751,7 @@ module hart #(
         valid_W_F
     );
 
-    ex-ex-forwarding eef (
+    exExForwarding eef (
         // ex source addresses
         rs1_raddr_D_X_r, rs2_raddr_D_X_r,
         // mem destination address
@@ -764,7 +764,7 @@ module hart #(
         reg2_ex_forward
     );
 
-    mem-ex-forwarding mef (
+    memExForwarding mef (
         // ex source addresses
         rs1_raddr_D_X_r, rs2_raddr_D_X_r,
         // mem destination address

@@ -76,7 +76,7 @@ module execute(
     output wire dmem_wen,
     output wire o_valid,
 
-    output branch_taken //ADDED THIS FOR BRNACH TAKEN HAZARD STUFF
+    output branch_taken, //ADDED THIS FOR BRNACH TAKEN HAZARD STUFF
 
     // forwarding
     input wire [31:0] i_result_M,
@@ -105,7 +105,6 @@ module execute(
     wire [31:0] muxed_target;
     assign muxed_target = i_isJALR ? {target_addr[31:1], 1'b0} : target_addr;
 
-    wire branch_taken;
     assign branch_taken = ((i_BranchEqual & o_eq) | // beq
                             (i_BranchLT & o_slt) |  // blt(u)
                             (~i_BranchLT & ~o_slt & ~i_BranchEqual) | // bge(u)

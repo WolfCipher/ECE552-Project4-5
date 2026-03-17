@@ -9,8 +9,8 @@ module fetch #(
 	
 	output wire [31:0] o_imem_raddr,
 	output wire [31:0] pc_to_decode,
-	output wire [31:0] instruction
-	input branch_taken, // add for branch handler stuff
+	output wire [31:0] instruction,
+	input branch_taken // add for branch handler stuff
 	
 );
 
