@@ -45,6 +45,7 @@ module decode (
 
     // new inputs/outputs for hazard detection unit
     input wire        ex_reg_write,
+    input wire        ex_mem_read,
     input wire [4:0]  ex_rd,
     input wire        mem_reg_write,
     input wire [4:0]  mem_rd,
@@ -120,16 +121,16 @@ wire hazard_ex_rs1, hazard_ex_rs2;
 wire hazard_mem_rs1, hazard_mem_rs2;
 wire hazard_wb_rs1, hazard_wb_rs2;
 
-assign hazard_ex_rs1  = ex_reg_write  && (ex_rd  != 5'd0) && uses_rs1 && (ex_rd  == rs1_raddr);
-assign hazard_ex_rs2  = ex_reg_write  && (ex_rd  != 5'd0) && uses_rs2 && (ex_rd  == rs2_raddr);
-assign hazard_mem_rs1 = mem_reg_write && (mem_rd != 5'd0) && uses_rs1 && (mem_rd == rs1_raddr);
-assign hazard_mem_rs2 = mem_reg_write && (mem_rd != 5'd0) && uses_rs2 && (mem_rd == rs2_raddr);
-assign hazard_wb_rs1  = wb_reg_write  && (wb_rd  != 5'd0) && uses_rs1 && (wb_rd  == rs1_raddr);
-assign hazard_wb_rs2  = wb_reg_write  && (wb_rd  != 5'd0) && uses_rs2 && (wb_rd  == rs2_raddr);
+assign hazard_ex_rs1  = ex_reg_write  && (ex_rd  != 5'd0) && uses_rs1 && (ex_rd  == rs1_raddr) && ex_mem_read;
+assign hazard_ex_rs2  = ex_reg_write  && (ex_rd  != 5'd0) && uses_rs2 && (ex_rd  == rs2_raddr) && ex_mem_read;
+// assign hazard_mem_rs1 = mem_reg_write && (mem_rd != 5'd0) && uses_rs1 && (mem_rd == rs1_raddr);
+// assign hazard_mem_rs2 = mem_reg_write && (mem_rd != 5'd0) && uses_rs2 && (mem_rd == rs2_raddr);
+// assign hazard_wb_rs1  = wb_reg_write  && (wb_rd  != 5'd0) && uses_rs1 && (wb_rd  == rs1_raddr);
+// assign hazard_wb_rs2  = wb_reg_write  && (wb_rd  != 5'd0) && uses_rs2 && (wb_rd  == rs2_raddr);
 
 assign o_stall = hazard_ex_rs1 || hazard_ex_rs2
-              || hazard_mem_rs1 || hazard_mem_rs2
-              || hazard_wb_rs1  || hazard_wb_rs2;
+            //   || hazard_mem_rs1 || hazard_mem_rs2
+            //   || hazard_wb_rs1  || hazard_wb_rs2;
 
 
 // mux control signals --> added 0 options to all controls in case we have to flush
