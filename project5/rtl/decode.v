@@ -128,7 +128,7 @@ assign hazard_ex_rs2  = ex_reg_write  && (ex_rd  != 5'd0) && uses_rs2 && (ex_rd 
 // assign hazard_wb_rs1  = wb_reg_write  && (wb_rd  != 5'd0) && uses_rs1 && (wb_rd  == rs1_raddr);
 // assign hazard_wb_rs2  = wb_reg_write  && (wb_rd  != 5'd0) && uses_rs2 && (wb_rd  == rs2_raddr);
 
-assign o_stall = hazard_ex_rs1 || hazard_ex_rs2
+assign o_stall = hazard_ex_rs1 || hazard_ex_rs2;
             //   || hazard_mem_rs1 || hazard_mem_rs2
             //   || hazard_wb_rs1  || hazard_wb_rs2;
 

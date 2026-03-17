@@ -14,7 +14,7 @@ module rf #(
     //
     // You are required to implement and test both modes. In project 3 and 4,
     // you will set this to 0, before enabling it in project 5.
-    parameter BYPASS_EN = 0
+    parameter BYPASS_EN = 1
 ) (
     // Global clock.
     input  wire        i_clk,
