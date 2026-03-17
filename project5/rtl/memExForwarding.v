@@ -7,8 +7,8 @@ module memExForwarding (
     output wire reg2_forward
 );
 
-    assign reg1_forward = (rs1_addr == rd_addr_W) & RegWrite_W;
-    assign reg2_forward = (rs2_addr == rd_addr_W) & RegWrite_W;
+    assign reg1_forward = (rs1_addr == rd_addr_W) & (rd_addr_W != 5'd0) & RegWrite_W;
+    assign reg2_forward = (rs2_addr == rd_addr_W) & (rd_addr_W != 5'd0) & RegWrite_W;
 
 endmodule
 

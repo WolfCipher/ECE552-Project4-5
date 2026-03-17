@@ -8,8 +8,8 @@ module exExForwarding (
     output wire reg2_forward
 );
 
-    assign reg1_forward = (rs1_addr == rd_addr_M) & RegWrite_M & ~MemRead_M;
-    assign reg2_forward = (rs2_addr == rd_addr_M) & RegWrite_M & ~MemRead_M;
+    assign reg1_forward = (rs1_addr == rd_addr_M) & (rd_addr_M != 5'd0) & RegWrite_M & ~MemRead_M;
+    assign reg2_forward = (rs2_addr == rd_addr_M) & (rd_addr_M != 5'd0) & RegWrite_M & ~MemRead_M;
 
 endmodule
 
