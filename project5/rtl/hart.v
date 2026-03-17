@@ -590,7 +590,7 @@ module hart #(
         end
     end
 
-    rf #(0) reg_file (
+    rf #(1) reg_file (
         i_clk, i_rst,
         // Register read port 1, with input address [0, 31] and output data.
         rs1_raddr_D_X_w, reg1_w,
