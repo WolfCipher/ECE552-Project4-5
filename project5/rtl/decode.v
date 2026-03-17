@@ -2,6 +2,7 @@
 module decode (
     input wire i_clk,
     input wire [31:0] instruction,
+
     // output mux values
     output wire jump,
     output wire branch_eq,
@@ -49,7 +50,9 @@ module decode (
     input wire [4:0]  mem_rd,
     input wire        wb_reg_write,
     input wire [4:0]  wb_rd,
-    output wire o_stall
+    output wire o_stall,
+    input branch_taken // add for branch handler stuff
+
 );
 
 // see if rs1 and rs2 are actually used
@@ -130,22 +133,22 @@ assign o_stall = hazard_ex_rs1 || hazard_ex_rs2
 
 
 // mux control signals --> added 0 options to all controls in case we have to flush
-assign jump          = o_stall ? 1'b0 : (j_valid | jalr_valid);
-assign branch_eq     = o_stall ? 1'b0 : ((funct3 == 3'b000) | (funct3 == 3'b101) | (funct3 == 3'b111));
-assign branch_lt     = o_stall ? 1'b0 : ((funct3 == 3'b110) | (funct3 == 3'b100) | (funct3 == 3'b001));
-assign branch        = o_stall ? 1'b0 : b_valid;
-assign mem_read      = o_stall ? 1'b0 : load_valid;
-assign mem_write     = o_stall ? 1'b0 : s_valid;
-assign mem_to_reg    = o_stall ? 1'b0 : load_valid;
-assign alu_src       = o_stall ? 1'b0 : !(is_r || is_b);
-assign reg_write     = o_stall ? 1'b0 : (r_valid || i_valid || u_valid || j_valid);
-assign is_u_instruct = o_stall ? 1'b0 : u_valid;
-assign u_type        = o_stall ? 1'b0 : ~instruction[5];
-assign is_jalr       = o_stall ? 1'b0 : jalr_valid;
-assign i_opsel       = o_stall ? 3'b000 : ((r_valid || reg_i_valid) ? instruction[14:12] : 3'b000);
-assign i_sub         = o_stall ? 1'b0 : ((is_r && funct7[5]) | is_b);
-assign i_arith       = o_stall ? 1'b0 : funct7[5];
-assign i_unsigned    = o_stall ? 1'b0 : ((funct3 == 3'b110) | (funct3 == 3'b011) | (funct3 == 3'b111));
+assign jump          = (o_stall|branch_taken) ? 1'b0 : (j_valid | jalr_valid);
+assign branch_eq     = (o_stall|branch_taken) ? 1'b0 : ((funct3 == 3'b000) | (funct3 == 3'b101) | (funct3 == 3'b111));
+assign branch_lt     = (o_stall|branch_taken) ? 1'b0 : ((funct3 == 3'b110) | (funct3 == 3'b100) | (funct3 == 3'b001));
+assign branch        = (o_stall|branch_taken) ? 1'b0 : b_valid;
+assign mem_read      = (o_stall|branch_taken) ? 1'b0 : load_valid;
+assign mem_write     = (o_stall|branch_taken) ? 1'b0 : s_valid;
+assign mem_to_reg    = (o_stall|branch_taken) ? 1'b0 : load_valid;
+assign alu_src       = (o_stall|branch_taken) ? 1'b0 : !(is_r || is_b);
+assign reg_write     = (o_stall|branch_taken) ? 1'b0 : (r_valid || i_valid || u_valid || j_valid);
+assign is_u_instruct = (o_stall|branch_taken) ? 1'b0 : u_valid;
+assign u_type        = (o_stall|branch_taken) ? 1'b0 : ~instruction[5];
+assign is_jalr       = (o_stall|branch_taken) ? 1'b0 : jalr_valid;
+assign i_opsel       = (o_stall|branch_taken) ? 3'b000 : ((r_valid || reg_i_valid) ? instruction[14:12] : 3'b000);
+assign i_sub         = (o_stall|branch_taken) ? 1'b0 : ((is_r && funct7[5]) | is_b);
+assign i_arith       = (o_stall|branch_taken) ? 1'b0 : funct7[5];
+assign i_unsigned    = (o_stall|branch_taken) ? 1'b0 : ((funct3 == 3'b110) | (funct3 == 3'b011) | (funct3 == 3'b111));
 
 
 assign format = is_r ? 6'b000001 : // R-Type
@@ -161,8 +164,8 @@ assign rs2_raddr = instruction[24:20];
 
 // handle retire values
 // added 0 to stall and trap in case we have to flush
-assign halt = o_stall ? 1'b0 : ebreak_valid;
-assign trap = o_stall ? 1'b0 : ~valid;
+assign halt = (o_stall|branch_taken) ? 1'b0 : ebreak_valid; //added to incorporate flush for branching
+assign trap = (o_stall|branch_taken) ? 1'b0 : ~valid; //added to incorporate flush for branching
 assign o_retire_instruction = instruction;
 assign rs1_rdata = (rs1_raddr == 5'd0) ? 32'd0 : reg_data1;
 assign rs2_rdata = (rs2_raddr == 5'd0) ? 32'd0 : reg_data2;

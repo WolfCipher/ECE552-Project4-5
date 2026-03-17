@@ -74,7 +74,10 @@ module execute(
     output wire o_trapX,
     output wire [31:0] dmem_wdata,
     output wire dmem_wen,
-    output wire o_valid
+    output wire o_valid,
+
+
+    output branch_taken //ADDED THIS FOR BRNACH TAKEN HAZARD STUFF
 );
 
     // ALU
@@ -96,6 +99,8 @@ module execute(
                             (~i_BranchLT & ~o_slt & ~i_BranchEqual) | // bge(u)
                             (~i_BranchEqual & ~o_eq & ~i_BranchLT)) // bne
                         & i_Branch;
+    
+    //branch prediction handler --> pass forward branch_taken value
 
     assign o_next_PC = (branch_taken || i_Jump) ? muxed_target : i_PC4;
 
@@ -168,6 +173,8 @@ module execute(
     assign dmem_wdata = mem_wdata;
     assign dmem_wen = i_MemWrite & i_valid;
     assign o_valid = i_valid;
+
+
 
 endmodule
 

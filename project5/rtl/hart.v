@@ -600,7 +600,8 @@ module hart #(
         next_PC_to_fetch,
         o_imem_raddr,
         PC_F_D_w,
-        instruction_w
+        instruction_w,
+        branch_taken //added for branch control
     );
 
 
@@ -627,7 +628,8 @@ module hart #(
         RegWrite_D_X_r, rd_waddr_D_X_r,   // EX stage
         RegWrite_X_M_r, rd_waddr_X_M_r,   // MEM stage
         RegWrite_M_W_r, rd_waddr_M_W_r,   // WB stage
-        stall
+        stall,
+        branch_taken //added for branch control
     );
 
     execute x (
@@ -659,7 +661,8 @@ module hart #(
         rs1_raddr_X_M_w, rs2_raddr_X_M_w,
         trapX_X_M_w,
         dmem_wdata_X_M_w, dmem_wen_X_M_w,
-        valid_X_M_w
+        valid_X_M_w,
+        branch_taken //added for branch control
     );
 
     memory m (
