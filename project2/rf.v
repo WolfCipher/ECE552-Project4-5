@@ -44,8 +44,8 @@ module rf #(
     // ASYNCHRONOUS
     // allow a bypass mode allowing data at the write port to be observed at the read port immediately
     wire bypass1, bypass2;
-    assign bypass1 = BYPASS_EN ? (i_rs1_raddr == i_rd_waddr) && (i_rd_waddr != 0) : 0;
-    assign bypass2 = BYPASS_EN ? (i_rs2_raddr == i_rd_waddr) && (i_rd_waddr != 0) : 0;
+    assign bypass1 = BYPASS_EN ? (i_rs1_raddr == i_rd_waddr) && (i_rd_waddr != 5'd0) && i_rd_wen : 0;
+    assign bypass2 = BYPASS_EN ? (i_rs2_raddr == i_rd_waddr) && (i_rd_waddr != 5'd0) && i_rd_wen : 0;
 
     // always read registers
     // x0 is architecturally hardwired to zero on reads regardless of storage.
@@ -94,7 +94,7 @@ module rf #(
             // only write if write enabled
             // ignore writes to register zero
             if (i_rd_wen == 1)
-                if(i_rd_waddr != 0)
+                if(i_rd_waddr != 5'd0)
                     reg_file[i_rd_waddr] <= i_rd_wdata;
         end
 
