@@ -674,7 +674,7 @@ module hart #(
         branch_taken, //added for branch control
 
         // forwarding
-        ALU_M_W_r, wb_data,
+        ALU_X_M_r, wb_data,
         reg1_ex_forward, reg2_ex_forward,
         reg1_mem_forward, reg2_mem_forward
     );
