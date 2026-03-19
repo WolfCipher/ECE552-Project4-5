@@ -101,9 +101,11 @@ module execute(
     alu op (i_opsel, i_sub, i_unsigned, i_arith, i_op1, i_op2, o_result, o_eq, o_slt);
 
     // determine PC
+
     // Use forwarded reg1 value for JALR target computation (handles cases where
     // reg1 is written by an earlier instruction that is being forwarded).
     assign target_addr = i_isJALR ? (reg1_forward + imm) : (i_PC + imm); //changed this to frowarded
+
 
     wire [31:0] muxed_target;
     assign muxed_target = i_isJALR ? {target_addr[31:1], 1'b0} : target_addr;
