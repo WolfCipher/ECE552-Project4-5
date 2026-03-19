@@ -69,21 +69,13 @@ module memory(
     output wire o_dmem_ren_retire,
     output wire o_dmem_wen,
     output wire [31:0] o_dmem_rdata,
-    output wire o_valid
+    output wire o_valid,
+    // forwarding signal
+    output wire [31:0] forward_result
 );
 
-    // // determine PC
-    // wire [31:0] muxed_target;
-    // assign muxed_target = i_isJALR ? {target_addr[31:1], 1'b0} : target_addr;
-
-    // wire branch_taken;
-    // assign branch_taken = ((i_BranchEqual & i_eq) | // beq
-    //                         (i_BranchLT & i_slt) |  // blt(u)
-    //                         (~i_BranchLT & ~i_slt & ~i_BranchEqual) | // bge(u)
-    //                         (~i_BranchEqual & ~i_eq & ~i_BranchLT)) // bne
-    //                     & i_Branch;
-
-    // assign next_PC = (branch_taken || i_Jump) ? muxed_target : i_PC4;
+    // handle forwarding
+    assign forward_result = i_Jump ? (i_PC + 32'd4) : (i_IsUInstruct ? i_uimm : i_result);
 
     // dmem
     assign o_dmem_ren = i_MemRead;

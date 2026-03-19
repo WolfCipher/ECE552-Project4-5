@@ -234,6 +234,7 @@ module hart #(
     // ex-to-ex forwarding
     wire reg1_ex_forward;
     wire reg2_ex_forward;
+    wire [31:0] exExForwardingResult;
     // mem-to-ex forwarding
     wire reg1_mem_forward;
     wire reg2_mem_forward;
@@ -674,7 +675,7 @@ module hart #(
         branch_taken, //added for branch control
 
         // forwarding
-        ALU_X_M_r, wb_data,
+        exExForwardingResult, wb_data,
         reg1_ex_forward, reg2_ex_forward,
         reg1_mem_forward, reg2_mem_forward
     );
@@ -712,7 +713,9 @@ module hart #(
         trapX_M_W_w,
         dmem_mask_M_W_w, dmem_addr_M_W_w, dmem_wdata_M_W_w,
         dmem_ren_M_W_w, dmem_wen_M_W_w, dmem_rdata_M_W_w,
-        valid_M_W_w
+        valid_M_W_w,
+        // forwarding result
+        exExForwardingResult
     );
 
 
