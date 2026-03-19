@@ -149,10 +149,10 @@ module execute(
     wire bit1 = (o_mask == 4'b0010) || (o_mask == 4'b0110) || (o_mask == 4'b1010) || (o_mask == 4'b1110);
     wire bit2 = (o_mask == 4'b0100) || (o_mask == 4'b1100);
 
-    assign shift_data = (bit0) ? reg2 :
-                        (bit1) ? {reg2[23:0], 8'd0} :
-                        (bit2) ? {reg2[15:0], 16'd0} :
-                        {reg2[7:0], 24'd0}; // (o_mask == 4'b1000)
+    assign shift_data = (bit0) ? reg2_forward :
+                        (bit1) ? {reg2_forward[23:0], 8'd0} :
+                        (bit2) ? {reg2_forward[15:0], 16'd0} :
+                        {reg2_forward[7:0], 24'd0}; // (o_mask == 4'b1000)
 
     assign mem_wdata = shift_data;
 
