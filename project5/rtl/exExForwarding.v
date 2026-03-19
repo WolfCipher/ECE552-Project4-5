@@ -8,6 +8,7 @@ module exExForwarding (
     output wire reg2_forward
 );
 
+    // Do not forward load results from M-stage (data not available until W stage)
     assign reg1_forward = (rs1_addr == rd_addr_M) & (rd_addr_M != 5'd0) & RegWrite_M & ~MemRead_M;
     assign reg2_forward = (rs2_addr == rd_addr_M) & (rd_addr_M != 5'd0) & RegWrite_M & ~MemRead_M;
 

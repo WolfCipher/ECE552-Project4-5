@@ -89,8 +89,9 @@ module execute(
 
     // Forwarding
     wire [31:0] reg1_forward, reg2_forward;
-    assign reg1_forward = forward_M_reg1 ? i_result_M : forward_W_reg1 ? i_result_W : reg1;
+    assign reg1_forward = forward_M_reg1 ? i_result_M : forward_W_reg1 ? i_result_W : reg1; //selects ex-ex forwarding data over mem-ex to ensure we get fresher data
     assign reg2_forward = forward_M_reg2 ? i_result_M : forward_W_reg2 ? i_result_W : reg2;
+    //changed these to forward version
 
     // ALU
     wire [31:0] i_op1, i_op2;
@@ -100,7 +101,9 @@ module execute(
     alu op (i_opsel, i_sub, i_unsigned, i_arith, i_op1, i_op2, o_result, o_eq, o_slt);
 
     // determine PC
-    assign target_addr = i_isJALR ? (reg1 + imm) : (i_PC + imm);
+    // Use forwarded reg1 value for JALR target computation (handles cases where
+    // reg1 is written by an earlier instruction that is being forwarded).
+    assign target_addr = i_isJALR ? (reg1_forward + imm) : (i_PC + imm); //changed this to frowarded
 
     wire [31:0] muxed_target;
     assign muxed_target = i_isJALR ? {target_addr[31:1], 1'b0} : target_addr;
@@ -174,11 +177,13 @@ module execute(
     assign o_reg2 = reg2;
 
     // Retire instructions
+    // Note: retire should report the operand values actually used by the ALU
+    // after forwarding, so that trace comparisons match the expected behavior.
     assign o_halt = i_halt;
     assign o_inst = i_inst;
     assign o_trapD = i_trapD;
-    assign o_reg1 = i_reg1;
-    assign o_reg2_retire = i_reg2;
+    assign o_reg1 = reg1_forward;
+    assign o_reg2_retire = reg2_forward;
     assign o_rs1 = i_rs1;
     assign o_rs2 = i_rs2;
     assign dmem_wdata = mem_wdata;
