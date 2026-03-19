@@ -529,14 +529,15 @@ module hart #(
         uimm_M_W_r <= uimm_M_W_w;
         mem_read_M_W_r <= mem_read_M_W_w;
 
-        reg1_r <= reg1_w;
-        reg2_r <= reg2_w;
-        imm_r <= imm_w;
-        funct3_r <= funct3_w;
-        i_opsel_r <= i_opsel_w;
-        i_sub_r <= i_sub_w;
-        i_unsigned_r <= i_unsigned_w;
-        i_arith_r <= i_arith_w;
+        //changed to add flush or stall 
+        reg1_r <= flush ? 32'd0 : (stall ? reg1_r : reg1_w);
+        reg2_r <= flush ? 32'd0 : (stall ? reg2_r : reg2_w);
+        imm_r <= flush ? 32'd0 : (stall ? imm_r : imm_w);
+        funct3_r <= flush ? 3'd0  : (stall ? funct3_r : funct3_w);
+        i_opsel_r <= flush ? 3'd0 : (stall ? i_opsel_r : i_opsel_w);
+        i_sub_r <= flush ? 1'b0 : (stall ? i_sub_r : i_sub_w);
+        i_unsigned_r <= flush ? 1'b0 : (stall ? i_unsigned_r : i_unsigned_w);
+        i_arith_r <= flush ? 1'b0 : (stall ? i_arith_r : i_arith_w);
 
         eq_r <= eq_w;
         slt_r <= slt_w;
@@ -550,16 +551,17 @@ module hart #(
         trapX_X_M_r <= trapX_X_M_w;
         trapX_M_W_r <= trapX_M_W_w;
 
-        rs1_raddr_D_X_r <= rs1_raddr_D_X_w;
+        //added flushing + stall stuff here 
+        rs1_raddr_D_X_r <= flush ? 5'd0 : (stall ? rs1_raddr_D_X_r : rs1_raddr_D_X_w);
         rs1_raddr_X_M_r <= rs1_raddr_X_M_w;
         rs1_raddr_M_W_r <= rs1_raddr_M_W_w;
-        rs2_raddr_D_X_r <= rs2_raddr_D_X_w;
+        rs2_raddr_D_X_r <= flush ? 5'd0 : (stall ? rs2_raddr_D_X_r : rs2_raddr_D_X_w);
         rs2_raddr_X_M_r <= rs2_raddr_X_M_w;
         rs2_raddr_M_W_r <= rs2_raddr_M_W_w;
-        rs1_rdata_D_X_r <= rs1_rdata_D_X_w;
+        rs1_rdata_D_X_r <= flush ? 32'd0 : (stall ? rs1_rdata_D_X_r : rs1_rdata_D_X_w);
         rs1_rdata_X_M_r <= rs1_rdata_X_M_w;
         rs1_rdata_M_W_r <= rs1_rdata_M_W_w;
-        rs2_rdata_D_X_r <= rs2_rdata_D_X_w;
+        rs2_rdata_D_X_r <= flush ? 32'd0 : (stall ? rs2_rdata_D_X_r : rs2_rdata_D_X_w);
         rs2_rdata_X_M_r <= rs2_rdata_X_M_w;
         rs2_rdata_M_W_r <= rs2_rdata_M_W_w;
 
