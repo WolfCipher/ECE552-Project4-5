@@ -1,0 +1,211 @@
+m255
+K4
+z2
+!s11f vlog 2020.1 2020.02, Feb 28 2020
+13
+!s112 1.1
+!i10d 8192
+!i10e 25
+!i10f 100
+cModel Technology
+Z0 dC:/Users/minec/Pictures/Documents/UW/ECE552/ECE552-Project4-5/project6-and-7/tb
+vdecode
+Z1 !s110 1774364590
+!i10b 1
+!s100 F[8[6a8O_80^=9hjokB`O2
+Z2 !s11b Dg1SIo80bB@j0V0VzS_@n1
+IK[WLiMFkILII7neo6YR[c1
+Z3 VDg1SIo80bB@j0V0VzS_@n1
+R0
+w1773787380
+8../rtl/decode.v
+F../rtl/decode.v
+!i122 0
+L0 2 184
+Z4 OV;L;2020.1;71
+r1
+!s85 0
+31
+Z5 !s108 1774364590.000000
+!s107 stall_mem_tb.v|../rtl/hart.v|../rtl/writeback.v|../rtl/memory.v|../rtl/memExForwarding.v|../rtl/exExForwarding.v|../rtl/execute.v|../rtl/decode.v|../rtl/fetch.v|
+Z6 !s90 ../rtl/fetch.v|../rtl/decode.v|../rtl/execute.v|../rtl/exExForwarding.v|../rtl/memExForwarding.v|../rtl/memory.v|../rtl/writeback.v|../rtl/hart.v|stall_mem_tb.v|
+!i113 1
+Z7 tCvgOpt 0
+vexecute
+R1
+!i10b 1
+!s100 ^c=?d[zK<i9jS2HF>WT5X3
+R2
+InFfBK[6:JNnn7Da4;1:[e2
+R3
+R0
+w1774364545
+8../rtl/execute.v
+F../rtl/execute.v
+!i122 0
+L0 3 198
+R4
+r1
+!s85 0
+31
+R5
+Z8 !s107 stall_mem_tb.v|../rtl/hart.v|../rtl/writeback.v|../rtl/memory.v|../rtl/memExForwarding.v|../rtl/exExForwarding.v|../rtl/execute.v|../rtl/decode.v|../rtl/fetch.v|
+R6
+!i113 1
+R7
+vexExForwarding
+R1
+!i10b 1
+!s100 kWAA`gLelOOOzMn^n5XTC0
+R2
+IkDi[JIKMAJKDiZD0=0<G23
+R3
+R0
+w1773931118
+8../rtl/exExForwarding.v
+F../rtl/exExForwarding.v
+!i122 0
+L0 1 15
+R4
+r1
+!s85 0
+31
+R5
+R8
+R6
+!i113 1
+R7
+nex@ex@forwarding
+vfetch
+R1
+!i10b 1
+!s100 `;EM>=9I7W>BVE0>GeGn21
+R2
+ID5hJD9cXN3^LHa:aQ7glf1
+R3
+R0
+w1773786996
+8../rtl/fetch.v
+F../rtl/fetch.v
+!i122 0
+L0 2 30
+R4
+r1
+!s85 0
+31
+R5
+R8
+R6
+!i113 1
+R7
+vhart
+R1
+!i10b 1
+!s100 ]hTMGMk4GCO_PgJf^nEKX0
+R2
+I`@h2C9YjHd2?AhL[o1aNK1
+R3
+R0
+w1774364550
+8../rtl/hart.v
+F../rtl/hart.v
+!i122 0
+L0 3 808
+R4
+r1
+!s85 0
+31
+R5
+R8
+R6
+!i113 1
+R7
+vhart_tb
+R1
+!i10b 1
+!s100 nZGaPbNX5@nB`V;F7gT871
+R2
+IC4Yag?XJ4zNUNAJG_=39M1
+R3
+R0
+w1774022178
+8stall_mem_tb.v
+Fstall_mem_tb.v
+!i122 0
+L0 2 207
+R4
+r1
+!s85 0
+31
+R5
+R8
+R6
+!i113 1
+R7
+vmemExForwarding
+R1
+!i10b 1
+!s100 Zl][VXeh>2f4X28:]5blj3
+R2
+IgaCFI3[hB?DF3oWQTBe>12
+R3
+R0
+w1773787661
+8../rtl/memExForwarding.v
+F../rtl/memExForwarding.v
+!i122 0
+L0 1 13
+R4
+r1
+!s85 0
+31
+R5
+R8
+R6
+!i113 1
+R7
+nmem@ex@forwarding
+vmemory
+R1
+!i10b 1
+!s100 ZK^dR9UP>>1;maj0>O?GO0
+R2
+IBFC__WJU1ZBGYRSf8k?Xo2
+R3
+R0
+w1774319512
+8../rtl/memory.v
+F../rtl/memory.v
+!i122 0
+L0 2 149
+R4
+r1
+!s85 0
+31
+R5
+R8
+R6
+!i113 1
+R7
+vwriteback
+R1
+!i10b 1
+!s100 JX9PnmIG@6h1T0X;A^BAj0
+R2
+I;M=bicYJ_KKDaLg4i<LLl0
+R3
+R0
+w1773076335
+8../rtl/writeback.v
+F../rtl/writeback.v
+!i122 0
+L0 1 84
+R4
+r1
+!s85 0
+31
+R5
+R8
+R6
+!i113 1
+R7

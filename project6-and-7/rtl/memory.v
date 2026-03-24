@@ -1,6 +1,8 @@
 // data memory
 module memory(
     input wire i_clk,
+    output wire stall,
+    input wire i_dmem_ready,
     // signals sent to data memory
     input wire [3:0] i_mask,
     input wire i_unsigned,
@@ -9,8 +11,8 @@ module memory(
     // ALU signal
     input wire [31:0] i_result,
     // Branch and PC signals
-    input wire i_eq,
-    input wire i_slt,
+    //input wire i_eq,
+    //input wire i_slt,
     input wire [31:0] target_addr,
     input wire [31:0] i_PC,
     input wire [31:0] i_PC4,
@@ -23,9 +25,9 @@ module memory(
     // input Mux signals
     input wire i_isJALR,
     input wire i_Jump,
-    input wire i_BranchEqual,
-    input wire i_BranchLT,
-    input wire i_Branch,
+    // input wire i_BranchEqual,
+    // input wire i_BranchLT,
+    // input wire i_Branch,
     input wire i_MemRead,
     input wire i_MemtoReg,
     //input wire i_MemWrite, must ask one cycle ahead
@@ -79,6 +81,7 @@ module memory(
 
     // dmem
     assign o_dmem_ren = i_MemRead;
+    assign stall = i_MemRead && !i_dmem_ready;
 
     // ****** READ *******
     // only read if read-enabled

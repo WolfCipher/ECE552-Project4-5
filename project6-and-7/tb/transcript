@@ -1,0 +1,26 @@
+# vsim -c work.hart_tb -do "run -all; quit -f" 
+# Start time: 10:04:57 on Mar 24,2026
+# Loading work.hart_tb
+# Loading work.memory
+# Loading work.hart
+# ** Error: (vsim-3033) Instantiation of 'rf' failed. The design unit was not found.
+#    Time: 0 ps  Iteration: 0  Instance: /hart_tb/dut File: ../rtl/hart.v Line: 622
+#         Searched libraries:
+#             C:/Users/minec/Pictures/Documents/UW/ECE552/ECE552-Project4-5/project6-and-7/tb/work
+# Loading work.fetch
+# Loading work.decode
+# ** Error: (vsim-3033) Instantiation of 'imm' failed. The design unit was not found.
+#    Time: 0 ps  Iteration: 0  Instance: /hart_tb/dut/d File: ../rtl/decode.v Line: 180
+#         Searched libraries:
+#             C:/Users/minec/Pictures/Documents/UW/ECE552/ECE552-Project4-5/project6-and-7/tb/work
+# Loading work.execute
+# ** Error: (vsim-3033) Instantiation of 'alu' failed. The design unit was not found.
+#    Time: 0 ps  Iteration: 0  Instance: /hart_tb/dut/x File: ../rtl/execute.v Line: 104
+#         Searched libraries:
+#             C:/Users/minec/Pictures/Documents/UW/ECE552/ECE552-Project4-5/project6-and-7/tb/work
+# Loading work.writeback
+# Loading work.exExForwarding
+# Loading work.memExForwarding
+# Error loading design
+# End time: 10:04:58 on Mar 24,2026, Elapsed time: 0:00:01
+# Errors: 3, Warnings: 0

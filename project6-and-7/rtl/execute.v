@@ -2,6 +2,8 @@
 // DOES choose between immediate and register 2
 module execute(
     input wire i_clk,
+    output wire stall,
+    input wire i_dmem_ready,
     // ALU inputs
     input wire [31:0] reg1,
     input wire [31:0] reg2,
@@ -43,9 +45,9 @@ module execute(
     // output mux signals
     output wire o_isJALR,
     output wire o_Jump,
-    output wire o_BranchEqual,
-    output wire o_BranchLT,
-    output wire o_Branch,
+    // output wire o_BranchEqual,
+    // output wire o_BranchLT,
+    // output wire o_Branch,
     output wire o_MemRead,
     output wire o_MemtoReg,
     output wire o_MemWrite,
@@ -86,6 +88,7 @@ module execute(
     input wire forward_W_reg1,
     input wire forward_W_reg2
 );
+    assign stall = i_MemWrite && !i_dmem_ready;
 
     // Forwarding
     wire [31:0] reg1_forward, reg2_forward;
@@ -167,9 +170,9 @@ module execute(
     assign o_PC = i_PC;
     assign o_isJALR = i_isJALR;
     assign o_Jump = i_Jump;
-    assign o_BranchEqual = i_BranchEqual;
-    assign o_BranchLT = i_BranchLT;
-    assign o_Branch = i_Branch;
+    // assign o_BranchEqual = i_BranchEqual;
+    // assign o_BranchLT = i_BranchLT;
+    // assign o_Branch = i_Branch;
     assign o_MemRead = i_MemRead;
     assign o_MemtoReg = i_MemtoReg;
     assign o_MemWrite = i_MemWrite;
