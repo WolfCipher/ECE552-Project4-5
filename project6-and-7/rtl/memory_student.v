@@ -1,5 +1,5 @@
 // data memory
-module memory(
+module memory_student(
     input wire i_clk,
     output wire stall,
     input wire i_dmem_ready,

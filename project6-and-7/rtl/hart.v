@@ -708,7 +708,7 @@ module hart #(
         reg1_mem_forward, reg2_mem_forward
     );
 
-    memory m (
+    memory_student m (
         i_clk, stall_M, i_dmem_ready,
         // signals sent to data memory
         dmem_mask_r, mem_unsigned_r, dmem_addr_r, reg2_X_M_r,
