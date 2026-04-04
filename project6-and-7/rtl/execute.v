@@ -88,7 +88,7 @@ module execute(
     input wire forward_W_reg1,
     input wire forward_W_reg2
 );
-    assign stall = i_MemWrite && !i_dmem_ready;
+    assign stall = i_MemWrite && !i_dmem_ready && i_valid;
 
     // Forwarding
     wire [31:0] reg1_forward, reg2_forward;

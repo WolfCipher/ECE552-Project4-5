@@ -3,6 +3,7 @@
 // data memory
 module memory_student(
     input wire i_clk,
+    output wire stall,
     input wire i_dmem_ready, //inserted here
     input wire i_dmem_valid, //inserted here
     // signals sent to data memory
@@ -78,27 +79,32 @@ module memory_student(
     output wire [31:0] forward_result
 );
 
-    reg read_req_sent_r; //inserted here
-    reg [31:0] read_data_r; //inserted here
+    reg read_req_sent_r = 1'b0; // Tracks whether a load request has been accepted.
+    reg read_resp_seen_r = 1'b0; // Tracks whether the accepted load has completed.
+    reg [31:0] read_data_r = 32'd0;
 
     // handle forwarding
     assign forward_result = i_Jump ? (i_PC + 32'd4) : (i_IsUInstruct ? i_uimm : i_result);
 
     // dmem read request:
     // send exactly once when memory is ready and a load is present,
-    // then wait for i_dmem_valid to capture the returning data.
-    assign o_dmem_ren = i_MemRead & i_valid & i_dmem_ready & ~read_req_sent_r; //inserted here
+    // then keep the stage stalled until the corresponding i_dmem_valid arrives.
+    wire load_active;
+    assign load_active = i_MemRead & i_valid;
+    assign o_dmem_ren = load_active & ~read_req_sent_r & i_dmem_ready;
+    assign stall = load_active & ~read_resp_seen_r;
 
     always @(posedge i_clk) begin
-        if (!i_valid || !i_MemRead) begin
-            read_req_sent_r <= 1'b0; //inserted here
+        if (!load_active) begin
+            read_req_sent_r <= 1'b0;
+            read_resp_seen_r <= 1'b0;
         end else begin
             if (o_dmem_ren) begin
-                read_req_sent_r <= 1'b1; //inserted here
+                read_req_sent_r <= 1'b1;
             end
-            if (i_dmem_valid) begin
-                read_data_r <= i_dmem_rdata; //inserted here
-                read_req_sent_r <= 1'b0; //inserted here
+            if (i_dmem_valid && read_req_sent_r) begin
+                read_data_r <= i_dmem_rdata;
+                read_resp_seen_r <= 1'b1;
             end
         end
     end
@@ -107,7 +113,7 @@ module memory_student(
     // only read if read-enabled
     // select bytes using the mask
     wire [31:0] data, masked_data;
-    assign data = i_MemRead ? read_data_r : 32'd0; //inserted here
+    assign data = i_MemRead ? (i_dmem_valid ? i_dmem_rdata : read_data_r) : 32'd0; //inserted here
     assign masked_data[31:24] = data[31:24] & {8{i_mask[3]}};
     assign masked_data[23:16] = data[23:16] & {8{i_mask[2]}};
     assign masked_data[15:8] = data[15:8] & {8{i_mask[1]}};
@@ -164,8 +170,8 @@ module memory_student(
     assign o_dmem_wen = i_dmem_wen;
     assign o_dmem_mask = i_mask;
     assign o_dmem_addr = i_mem_addr;
-    assign o_dmem_rdata = read_data_r; //inserted here
-    assign o_dmem_ren_retire = i_MemRead;
+    assign o_dmem_rdata = i_dmem_valid ? i_dmem_rdata : read_data_r; //inserted here
+    assign o_dmem_ren_retire = i_MemRead & i_valid;
 
 endmodule
 

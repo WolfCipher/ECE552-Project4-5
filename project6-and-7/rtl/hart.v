@@ -275,12 +275,14 @@ module hart #(
     wire valid_D_X_w, valid_X_M_w, valid_M_W_w;
     wire valid_W_F;
 
-    assign stall_X = valid_D_X_r & MemWrite_D_X_r & ~i_dmem_ready; //inserted here
-    assign stall_M = valid_X_M_r & MemRead_X_M_r & ~i_dmem_valid; //inserted here
+    //assign stall_X = valid_D_X_r & MemWrite_D_X_r & ~i_dmem_ready; //inserted here
+    //assign stall_M = valid_X_M_r & MemRead_X_M_r & ~i_dmem_valid; //inserted here
     assign stall_F = fetch_wait; //inserted here
 
     assign valid_F_D_w = ~fetch_wait;
-    assign valid_D_X_w = valid_F_D_r & ~stall_D;
+    // Allow the current decoded instruction to advance even when fetch is waiting.
+    assign valid_D_X_w = valid_F_D_r & ~stall_D_from_F;
+    // valid_X_M_w and valid_M_W_w are driven by execute and memory_student module outputs
     assign o_retire_valid = valid_W_F;
 
     // TRAP
@@ -370,16 +372,9 @@ module hart #(
     wire [31:0] next_PC_to_fetch;
 
     wire branch_taken;
-    wire branch_taken_X;
-    assign branch_taken_X = ((BranchEqual_D_X_r & eq_w) |
-                             (BranchLT_D_X_r & slt_w) |
-                             (~BranchLT_D_X_r & ~slt_w & ~BranchEqual_D_X_r) |
-                             (~BranchEqual_D_X_r & ~eq_w & ~BranchLT_D_X_r))
-                            & Branch_D_X_r;
-    assign branch_taken = branch_taken_X;
 
     wire redirect_X;
-    assign redirect_X = valid_D_X_r & (Jump_D_X_r | branch_taken_X);
+    assign redirect_X = valid_D_X_r & (Jump_D_X_r | branch_taken);
 
     wire flush;
     assign flush = redirect_X;
@@ -387,7 +382,7 @@ module hart #(
     wire [31:0] redirect_target_X;
     assign redirect_target_X = isJALR_D_X_r ? {target_addr_D_X_w[31:1], 1'b0} : target_addr_D_X_w;
 
-    assign next_PC_to_fetch = redirect_X ? redirect_target_X : (o_imem_raddr + 32'd4); //inserted here
+    assign next_PC_to_fetch = redirect_X ? redirect_target_X : (o_imem_raddr + 32'd4);
     always @(posedge i_clk) begin
         if (i_rst) begin
             PC_F_D_r <= 32'd0;
@@ -506,41 +501,41 @@ module hart #(
             instruction_r <= flush ? 32'h00000013 : (stall_M_X_D_F ? instruction_r : instruction_w); //inserted here
 
             // D/X : hold on stall_M_X, bubble on stall_D, clear on flush
-            RegWrite_D_X_r    <= flush ? 1'b0 : (stall_D_from_F ? RegWrite_D_X_r    : (stall_D ? 1'b0  : RegWrite_D_X_w)); //inserted here
-            MemRead_D_X_r     <= flush ? 1'b0 : (stall_D_from_F ? MemRead_D_X_r     : (stall_D ? 1'b0  : MemRead_D_X_w)); //inserted here
-            MemWrite_D_X_r    <= flush ? 1'b0 : (stall_D_from_F ? MemWrite_D_X_r    : (stall_D ? 1'b0  : MemWrite_D_X_w)); //inserted here
-            Jump_D_X_r        <= flush ? 1'b0 : (stall_D_from_F ? Jump_D_X_r        : (stall_D ? 1'b0  : Jump_D_X_w)); //inserted here
-            Branch_D_X_r      <= flush ? 1'b0 : (stall_D_from_F ? Branch_D_X_r      : (stall_D ? 1'b0  : Branch_D_X_w)); //inserted here
-            BranchEqual_D_X_r <= flush ? 1'b0 : (stall_D_from_F ? BranchEqual_D_X_r : (stall_D ? 1'b0  : BranchEqual_D_X_w)); //inserted here
-            BranchLT_D_X_r    <= flush ? 1'b0 : (stall_D_from_F ? BranchLT_D_X_r    : (stall_D ? 1'b0  : BranchLT_D_X_w)); //inserted here
-            MemtoReg_D_X_r    <= flush ? 1'b0 : (stall_D_from_F ? MemtoReg_D_X_r    : (stall_D ? 1'b0  : MemtoReg_D_X_w)); //inserted here
-            isJALR_D_X_r      <= flush ? 1'b0 : (stall_D_from_F ? isJALR_D_X_r      : (stall_D ? 1'b0  : isJALR_D_X_w)); //inserted here
-            rd_waddr_D_X_r    <= flush ? 5'd0 : (stall_D_from_F ? rd_waddr_D_X_r    : (stall_D ? 5'd0  : rd_waddr_D_X_w)); //inserted here
-            halt_D_X_r        <= flush ? 1'b0 : (stall_D_from_F ? halt_D_X_r        : (stall_D ? 1'b0  : halt_D_X_w)); //inserted here
-            trapD_D_X_r       <= flush ? 1'b0 : (stall_D_from_F ? trapD_D_X_r       : (stall_D ? 1'b0  : trapD_D_X_w)); //inserted here
-            IsUInstruct_D_X_r <= flush ? 1'b0 : (stall_D_from_F ? IsUInstruct_D_X_r : (stall_D ? 1'b0  : IsUInstruct_D_X_w)); //inserted here
-            UpperType_D_X_r   <= flush ? 1'b0 : (stall_D_from_F ? UpperType_D_X_r   : (stall_D ? 1'b0  : UpperType_D_X_w)); //inserted here
-            ALUSrc_D_X_r      <= flush ? 1'b0 : (stall_D_from_F ? ALUSrc_D_X_r      : (stall_D ? 1'b0  : ALUSrc_D_X_w)); //inserted here
+            RegWrite_D_X_r    <= flush ? 1'b0 : (stall_M_X ? RegWrite_D_X_r    : (stall_D_from_F ? 1'b0  : RegWrite_D_X_w)); //inserted here
+            MemRead_D_X_r     <= flush ? 1'b0 : (stall_M_X ? MemRead_D_X_r     : (stall_D_from_F ? 1'b0  : MemRead_D_X_w)); //inserted here
+            MemWrite_D_X_r    <= flush ? 1'b0 : (stall_M_X ? MemWrite_D_X_r    : (stall_D_from_F ? 1'b0  : MemWrite_D_X_w)); //inserted here
+            Jump_D_X_r        <= flush ? 1'b0 : (stall_M_X ? Jump_D_X_r        : (stall_D_from_F ? 1'b0  : Jump_D_X_w)); //inserted here
+            Branch_D_X_r      <= flush ? 1'b0 : (stall_M_X ? Branch_D_X_r      : (stall_D_from_F ? 1'b0  : Branch_D_X_w)); //inserted here
+            BranchEqual_D_X_r <= flush ? 1'b0 : (stall_M_X ? BranchEqual_D_X_r : (stall_D_from_F ? 1'b0  : BranchEqual_D_X_w)); //inserted here
+            BranchLT_D_X_r    <= flush ? 1'b0 : (stall_M_X ? BranchLT_D_X_r    : (stall_D_from_F ? 1'b0  : BranchLT_D_X_w)); //inserted here
+            MemtoReg_D_X_r    <= flush ? 1'b0 : (stall_M_X ? MemtoReg_D_X_r    : (stall_D_from_F ? 1'b0  : MemtoReg_D_X_w)); //inserted here
+            isJALR_D_X_r      <= flush ? 1'b0 : (stall_M_X ? isJALR_D_X_r      : (stall_D_from_F ? 1'b0  : isJALR_D_X_w)); //inserted here
+            rd_waddr_D_X_r    <= flush ? 5'd0 : (stall_M_X ? rd_waddr_D_X_r    : (stall_D_from_F ? 5'd0  : rd_waddr_D_X_w)); //inserted here
+            halt_D_X_r        <= flush ? 1'b0 : (stall_M_X ? halt_D_X_r        : (stall_D_from_F ? 1'b0  : halt_D_X_w)); //inserted here
+            trapD_D_X_r       <= flush ? 1'b0 : (stall_M_X ? trapD_D_X_r       : (stall_D_from_F ? 1'b0  : trapD_D_X_w)); //inserted here
+            IsUInstruct_D_X_r <= flush ? 1'b0 : (stall_M_X ? IsUInstruct_D_X_r : (stall_D_from_F ? 1'b0  : IsUInstruct_D_X_w)); //inserted here
+            UpperType_D_X_r   <= flush ? 1'b0 : (stall_M_X ? UpperType_D_X_r   : (stall_D_from_F ? 1'b0  : UpperType_D_X_w)); //inserted here
+            ALUSrc_D_X_r      <= flush ? 1'b0 : (stall_M_X ? ALUSrc_D_X_r      : (stall_D_from_F ? 1'b0  : ALUSrc_D_X_w)); //inserted here
 
-            PC_D_X_r          <= flush ? 32'd0 : (stall_D_from_F ? PC_D_X_r         : (stall_D ? 32'd0 : PC_D_X_w)); //inserted here
-            PC4_D_X_r         <= flush ? 32'd0 : (stall_D_from_F ? PC4_D_X_r        : (stall_D ? 32'd0 : PC4_D_X_w)); //inserted here
+            PC_D_X_r          <= flush ? 32'd0 : (stall_M_X ? PC_D_X_r         : (stall_D_from_F ? 32'd0 : PC_D_X_w)); //inserted here
+            PC4_D_X_r         <= flush ? 32'd0 : (stall_M_X ? PC4_D_X_r        : (stall_D_from_F ? 32'd0 : PC4_D_X_w)); //inserted here
 
-            reg1_r            <= flush ? 32'd0 : (stall_D_from_F ? reg1_r         : reg1_w); //inserted here
-            reg2_r            <= flush ? 32'd0 : (stall_D_from_F ? reg2_r         : reg2_w); //inserted here
-            imm_r             <= flush ? 32'd0 : (stall_D_from_F ? imm_r          : imm_w); //inserted here
-            funct3_r          <= flush ? 3'd0  : (stall_D_from_F ? funct3_r       : funct3_w); //inserted here
-            i_opsel_r         <= flush ? 3'd0  : (stall_D_from_F ? i_opsel_r      : i_opsel_w); //inserted here
-            i_sub_r           <= flush ? 1'b0  : (stall_D_from_F ? i_sub_r        : i_sub_w); //inserted here
-            i_unsigned_r      <= flush ? 1'b0  : (stall_D_from_F ? i_unsigned_r   : i_unsigned_w); //inserted here
-            i_arith_r         <= flush ? 1'b0  : (stall_D_from_F ? i_arith_r      : i_arith_w); //inserted here
+            reg1_r            <= flush ? 32'd0 : (stall_M_X ? reg1_r         : reg1_w); //inserted here
+            reg2_r            <= flush ? 32'd0 : (stall_M_X ? reg2_r         : reg2_w); //inserted here
+            imm_r             <= flush ? 32'd0 : (stall_M_X ? imm_r          : imm_w); //inserted here
+            funct3_r          <= flush ? 3'd0  : (stall_M_X ? funct3_r       : funct3_w); //inserted here
+            i_opsel_r         <= flush ? 3'd0  : (stall_M_X ? i_opsel_r      : i_opsel_w); //inserted here
+            i_sub_r           <= flush ? 1'b0  : (stall_M_X ? i_sub_r        : i_sub_w); //inserted here
+            i_unsigned_r      <= flush ? 1'b0  : (stall_M_X ? i_unsigned_r   : i_unsigned_w); //inserted here
+            i_arith_r         <= flush ? 1'b0  : (stall_M_X ? i_arith_r      : i_arith_w); //inserted here
 
-            rs1_raddr_D_X_r   <= flush ? 5'd0  : (stall_D_from_F ? rs1_raddr_D_X_r  : (stall_D ? rs1_raddr_D_X_r : rs1_raddr_D_X_w)); //inserted here
-            rs2_raddr_D_X_r   <= flush ? 5'd0  : (stall_D_from_F ? rs2_raddr_D_X_r  : (stall_D ? rs2_raddr_D_X_r : rs2_raddr_D_X_w)); //inserted here
-            rs1_rdata_D_X_r   <= flush ? 32'd0 : (stall_D_from_F ? rs1_rdata_D_X_r  : (stall_D ? rs1_rdata_D_X_r : rs1_rdata_D_X_w)); //inserted here
-            rs2_rdata_D_X_r   <= flush ? 32'd0 : (stall_D_from_F ? rs2_rdata_D_X_r  : (stall_D ? rs2_rdata_D_X_r : rs2_rdata_D_X_w)); //inserted here
+            rs1_raddr_D_X_r   <= flush ? 5'd0  : (stall_M_X ? rs1_raddr_D_X_r  : (stall_D_from_F ? 5'd0 : rs1_raddr_D_X_w)); //inserted here
+            rs2_raddr_D_X_r   <= flush ? 5'd0  : (stall_M_X ? rs2_raddr_D_X_r  : (stall_D_from_F ? 5'd0 : rs2_raddr_D_X_w)); //inserted here
+            rs1_rdata_D_X_r   <= flush ? 32'd0 : (stall_M_X ? rs1_rdata_D_X_r  : (stall_D_from_F ? 32'd0 : rs1_rdata_D_X_w)); //inserted here
+            rs2_rdata_D_X_r   <= flush ? 32'd0 : (stall_M_X ? rs2_rdata_D_X_r  : (stall_D_from_F ? 32'd0 : rs2_rdata_D_X_w)); //inserted here
 
-            inst_D_X_r        <= flush ? 32'd0 : (stall_D_from_F ? inst_D_X_r       : (stall_D ? 32'd0 : inst_D_X_w)); //inserted here
-            valid_D_X_r       <= flush ? 1'b0  : (stall_D_from_F ? valid_D_X_r      : (stall_D ? 1'b0  : valid_D_X_w)); //inserted here
+            inst_D_X_r        <= flush ? 32'd0 : (stall_M_X ? inst_D_X_r       : (stall_D_from_F ? 32'd0 : inst_D_X_w)); //inserted here
+            valid_D_X_r       <= flush ? 1'b0  : (stall_M_X ? valid_D_X_r      : (stall_D_from_F ? 1'b0  : valid_D_X_w)); //inserted here
 
             // X/M : hold on stall_M_X
             target_addr_D_X_r <= stall_M_X ? target_addr_D_X_r : target_addr_D_X_w;
@@ -584,7 +579,7 @@ module hart #(
 
             halt_X_M_r        <= stall_M_X ? halt_X_M_r        : halt_X_M_w;
             inst_X_M_r        <= stall_M_X ? inst_X_M_r        : inst_X_M_w;
-            valid_X_M_r       <= stall_M_X ? valid_X_M_r       : valid_D_X_r;
+            valid_X_M_r       <= stall_M_X ? valid_X_M_r       : valid_X_M_w;
             // M/W : hold on stall_M
             next_PC_M_W_r     <= stall_M ? next_PC_M_W_r : next_PC_M_W_w; //inserted here
             Jump_M_W_r        <= stall_M ? Jump_M_W_r : Jump_M_W_w; //inserted here
@@ -617,7 +612,8 @@ module hart #(
 
             halt_M_W_r        <= stall_M ? halt_M_W_r : halt_M_W_w; //inserted here
             inst_M_W_r        <= stall_M ? inst_M_W_r : inst_M_W_w; //inserted here
-            valid_M_W_r       <= stall_M ? valid_M_W_r : valid_X_M_r; //inserted here
+            // Advance M/W when not stalled, else hold
+            valid_M_W_r       <= stall_M ? valid_M_W_r : valid_M_W_w; //inserted here
         end
     end
 
@@ -636,7 +632,7 @@ module hart #(
         i_imem_rdata,
         next_PC_to_fetch,
         stall_M_X_D,     //inserted here
-        branch_taken,
+        redirect_X,
         o_imem_raddr,
         o_imem_ren,      //inserted here
         fetch_wait,      //inserted here
@@ -693,7 +689,7 @@ module hart #(
     );
 
     memory_student m (
-        i_clk,
+        i_clk, stall_M,
         i_dmem_ready, //inserted here
         i_dmem_valid, //inserted here
         dmem_mask_r, mem_unsigned_r, dmem_addr_r, reg2_X_M_r,
@@ -754,6 +750,7 @@ module hart #(
         rs1_raddr_D_X_r, rs2_raddr_D_X_r,
         rd_waddr_X_M_r,
         RegWrite_X_M_r,
+        valid_X_M_r,
         MemRead_X_M_r,
         reg1_ex_forward,
         reg2_ex_forward
@@ -763,6 +760,7 @@ module hart #(
         rs1_raddr_D_X_r, rs2_raddr_D_X_r,
         rd_waddr_M_W_r,
         RegWrite_M_W_r,
+        valid_M_W_r,
         reg1_mem_forward,
         reg2_mem_forward
     );
