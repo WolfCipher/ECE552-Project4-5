@@ -1,8 +1,10 @@
+`default_nettype none
+
 // data memory
 module memory_student(
     input wire i_clk,
-    output wire stall,
-    input wire i_dmem_ready,
+    input wire i_dmem_ready, //inserted here
+    input wire i_dmem_valid, //inserted here
     // signals sent to data memory
     input wire [3:0] i_mask,
     input wire i_unsigned,
@@ -76,18 +78,36 @@ module memory_student(
     output wire [31:0] forward_result
 );
 
+    reg read_req_sent_r; //inserted here
+    reg [31:0] read_data_r; //inserted here
+
     // handle forwarding
     assign forward_result = i_Jump ? (i_PC + 32'd4) : (i_IsUInstruct ? i_uimm : i_result);
 
-    // dmem
-    assign o_dmem_ren = i_MemRead;
-    assign stall = i_MemRead && !i_dmem_ready;
+    // dmem read request:
+    // send exactly once when memory is ready and a load is present,
+    // then wait for i_dmem_valid to capture the returning data.
+    assign o_dmem_ren = i_MemRead & i_valid & i_dmem_ready & ~read_req_sent_r; //inserted here
+
+    always @(posedge i_clk) begin
+        if (!i_valid || !i_MemRead) begin
+            read_req_sent_r <= 1'b0; //inserted here
+        end else begin
+            if (o_dmem_ren) begin
+                read_req_sent_r <= 1'b1; //inserted here
+            end
+            if (i_dmem_valid) begin
+                read_data_r <= i_dmem_rdata; //inserted here
+                read_req_sent_r <= 1'b0; //inserted here
+            end
+        end
+    end
 
     // ****** READ *******
     // only read if read-enabled
     // select bytes using the mask
     wire [31:0] data, masked_data;
-    assign data = i_MemRead ? i_dmem_rdata : 32'd0;
+    assign data = i_MemRead ? read_data_r : 32'd0; //inserted here
     assign masked_data[31:24] = data[31:24] & {8{i_mask[3]}};
     assign masked_data[23:16] = data[23:16] & {8{i_mask[2]}};
     assign masked_data[15:8] = data[15:8] & {8{i_mask[1]}};
@@ -116,7 +136,7 @@ module memory_student(
                     (i_mask == 4'b1000) ? {{24{sign_bit}}, masked_data[31:24]} :
                     (i_mask == 4'b0100) ? {{24{sign_bit}}, masked_data[23:16]} :
                     (i_mask == 4'b0010) ? {{24{sign_bit}}, masked_data[15:8]} :
-                    32'd0; // default case, should never occur
+                    32'd0;
 
     // pass through stage
     assign o_PC = i_PC;
@@ -144,7 +164,7 @@ module memory_student(
     assign o_dmem_wen = i_dmem_wen;
     assign o_dmem_mask = i_mask;
     assign o_dmem_addr = i_mem_addr;
-    assign o_dmem_rdata = i_dmem_rdata;
+    assign o_dmem_rdata = read_data_r; //inserted here
     assign o_dmem_ren_retire = i_MemRead;
 
 endmodule

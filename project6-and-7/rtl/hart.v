@@ -67,7 +67,7 @@ module hart #(
     output wire        o_dmem_wen,
     // The 32-bit word to write to memory when `o_dmem_wen` is asserted. When
     // write enable is asserted, the byte lanes specified by the mask will be
-    // written to the memory word at the aligned address at the next rising
+    // written to the memory word at the aligned word at the next rising
     // clock edge. The other byte lanes of the word will be unaffected.
     output wire [31:0] o_dmem_wdata,
     // The dmem interface expects word (32 bit) aligned addresses. However,
@@ -176,9 +176,9 @@ module hart #(
     reg BranchEqual_D_X_r, BranchEqual_X_M_r;
     reg BranchLT_D_X_r, BranchLT_X_M_r;
     reg Branch_D_X_r, Branch_X_M_r;
-    reg MemRead_D_X_r, MemRead_X_M_r; // TODO: replace last signal with o_dmem_ren
+    reg MemRead_D_X_r, MemRead_X_M_r;
     reg MemtoReg_D_X_r, MemtoReg_X_M_r, MemtoReg_M_W_r;
-    reg MemWrite_D_X_r; //MemWrite_X_M_r; // TODO: replace last signal with o_dmem_wen
+    reg MemWrite_D_X_r;
     reg RegWrite_D_X_r, RegWrite_X_M_r, RegWrite_M_W_r;
     reg UpperType_D_X_r;
     reg IsUInstruct_D_X_r, IsUInstruct_X_M_r, IsUInstruct_M_W_r;
@@ -186,12 +186,12 @@ module hart #(
 
     wire isJALR_D_X_w, isJALR_X_M_w;
     wire Jump_D_X_w, Jump_X_M_w, Jump_M_W_w;
-    wire BranchEqual_D_X_w;//, BranchEqual_X_M_w;
-    wire BranchLT_D_X_w;//, BranchLT_X_M_w;
-    wire Branch_D_X_w;//, Branch_X_M_w;
-    wire MemRead_D_X_w, MemRead_X_M_w; // TODO: replace last signal with o_dmem_ren
+    wire BranchEqual_D_X_w;
+    wire BranchLT_D_X_w;
+    wire Branch_D_X_w;
+    wire MemRead_D_X_w, MemRead_X_M_w;
     wire MemtoReg_D_X_w, MemtoReg_X_M_w, MemtoReg_M_W_w;
-    wire MemWrite_D_X_w; //MemWrite_X_M_w; // TODO: replace last signal with o_dmem_wen
+    wire MemWrite_D_X_w;
     wire RegWrite_D_X_w, RegWrite_X_M_w, RegWrite_M_W_w;
     wire UpperType_D_X_w;
     wire IsUInstruct_D_X_w, IsUInstruct_X_M_w, IsUInstruct_M_W_w;
@@ -213,11 +213,11 @@ module hart #(
     // ALU result, U type result, memory result
     reg [31:0] ALU_X_M_r, ALU_M_W_r;
     reg [31:0] uimm_X_M_r, uimm_M_W_r;
-    reg [31:0] mem_read_M_W_r; // TODO replace with i_dem_rdata
+    reg [31:0] mem_read_M_W_r;
 
     wire [31:0] ALU_X_M_w, ALU_M_W_w;
     wire [31:0] uimm_X_M_w, uimm_M_W_w;
-    wire [31:0] mem_read_M_W_w; // TODO replace with i_dem_rdata
+    wire [31:0] mem_read_M_W_w;
 
     // Signals just between decode and execute stages
     reg [31:0] reg1_r, reg2_r, imm_r;
@@ -230,7 +230,7 @@ module hart #(
     
     // Signals just between execute and memory
     reg eq_r, slt_r, mem_unsigned_r;
-    reg [31:0] dmem_addr_r, reg2_X_M_r; // TODO replace with o_dmem_addr, o_dmem_wdata
+    reg [31:0] dmem_addr_r, reg2_X_M_r;
     reg [3:0] dmem_mask_r;
 
     wire eq_w, slt_w, mem_unsigned_w;
@@ -242,45 +242,48 @@ module hart #(
     reg [31:0] dmem_wdata_ex_r;
     reg        dmem_wen_ex_r;
 
+    //inserted here
+    wire fetch_wait;
+
     // Drive the external dmem interface from the MEM stage (registered) signals.
-    // Reads are combinational off of the address + ren, writes occur on the next clock edge.
     assign o_dmem_addr  = dmem_addr_r;
     assign o_dmem_mask  = dmem_mask_r;
     assign o_dmem_wdata = dmem_wdata_ex_r;
     assign o_dmem_wen   = dmem_wen_ex_r;
 
     wire stall_F, stall_D, stall_X, stall_M;
-    wire stall_M_X, stall_M_X_D, stall_M_X_D_F; // propagate stalls down pipeline
-    assign stall_M_X = stall_M | stall_X; // stall stage X
-    assign stall_M_X_D = stall_M_X | stall_D; // stall stage D
-    assign stall_M_X_D_F = stall_M_X_D | stall_F; // stall stage F
+    wire stall_M_X, stall_M_X_D, stall_M_X_D_F;
+
+    assign stall_M_X = stall_M | stall_X;
+    assign stall_M_X_D = stall_M_X | stall_D;
+    assign stall_M_X_D_F = stall_M_X_D | stall_F; //inserted here
+
+    wire stall_D_from_F; //inserted here
+    assign stall_D_from_F = stall_M_X | stall_F; //inserted here
 
     // **** FORWARDING SIGNALS *****
-    // ex-to-ex forwarding
     wire reg1_ex_forward;
     wire reg2_ex_forward;
     wire [31:0] exExForwardingResult;
-    // mem-to-ex forwarding
     wire reg1_mem_forward;
     wire reg2_mem_forward;
     
     // **** HANDLE RETIRE *******
-    // VALID
-    // TODO: 1 if not a flush
     reg  valid_F_D_r;
     reg  valid_D_X_r, valid_X_M_r, valid_M_W_r;
     wire valid_F_D_w;
     wire valid_D_X_w, valid_X_M_w, valid_M_W_w;
     wire valid_W_F;
 
-    assign valid_F_D_w = 1'b1;
+    assign stall_X = valid_D_X_r & MemWrite_D_X_r & ~i_dmem_ready; //inserted here
+    assign stall_M = valid_X_M_r & MemRead_X_M_r & ~i_dmem_valid; //inserted here
+    assign stall_F = fetch_wait; //inserted here
 
-    // valid_D_X_w comes from decode — 1 when not a bubble
+    assign valid_F_D_w = ~fetch_wait;
     assign valid_D_X_w = valid_F_D_r & ~stall_D;
     assign o_retire_valid = valid_W_F;
 
     // TRAP
-    // check for traps in stages where we can find a bad instruction and bad addresses
     reg trapD_D_X_r, trapD_X_M_r, trapD_M_W_r;
     reg trapX_X_M_r, trapX_M_W_r;
 
@@ -360,24 +363,20 @@ module hart #(
     wire [31:0] inst_W_F;
     assign o_retire_inst = inst_W_F;
 
-
-    // TODO take action if the retired instruction is valid
-    // wire next_pc;
-    // assign next_pc = o_retire_valid ? o_retire_next_pc : 32'd0; // TODO: what should default value be?
-
     // Additional wires
-    reg [31:0] instruction_r;    // fetched instruction register
+    reg [31:0] instruction_r;
     wire [31:0] instruction_w;
 
     wire [31:0] next_PC_to_fetch;
 
     wire branch_taken;
     wire branch_taken_X;
-    assign branch_taken_X = ((BranchEqual_D_X_r & eq_w) | // beq
-                             (BranchLT_D_X_r & slt_w) |  // blt(u)
-                             (~BranchLT_D_X_r & ~slt_w & ~BranchEqual_D_X_r) | // bge(u)
-                             (~BranchEqual_D_X_r & ~eq_w & ~BranchLT_D_X_r)) // bne
+    assign branch_taken_X = ((BranchEqual_D_X_r & eq_w) |
+                             (BranchLT_D_X_r & slt_w) |
+                             (~BranchLT_D_X_r & ~slt_w & ~BranchEqual_D_X_r) |
+                             (~BranchEqual_D_X_r & ~eq_w & ~BranchLT_D_X_r))
                             & Branch_D_X_r;
+    assign branch_taken = branch_taken_X;
 
     wire redirect_X;
     assign redirect_X = valid_D_X_r & (Jump_D_X_r | branch_taken_X);
@@ -388,9 +387,7 @@ module hart #(
     wire [31:0] redirect_target_X;
     assign redirect_target_X = isJALR_D_X_r ? {target_addr_D_X_w[31:1], 1'b0} : target_addr_D_X_w;
 
-    assign next_PC_to_fetch = stall_D ? o_imem_raddr : (redirect_X ? redirect_target_X : (o_imem_raddr + 32'd4));
-
-    // Capture all stage-register values from their companion _w nets.
+    assign next_PC_to_fetch = redirect_X ? redirect_target_X : (o_imem_raddr + 32'd4); //inserted here
     always @(posedge i_clk) begin
         if (i_rst) begin
             PC_F_D_r <= 32'd0;
@@ -403,7 +400,6 @@ module hart #(
             target_addr_D_X_r <= 32'd0;
             next_PC_M_W_r <= RESET_ADDR;
 
-            // added for hazard detection
             valid_F_D_r <= 1'b0;
             valid_D_X_r <= 1'b0;
             valid_X_M_r <= 1'b0;
@@ -502,239 +498,220 @@ module hart #(
             inst_X_M_r <= 32'd0;
             inst_M_W_r <= 32'd0;
             instruction_r <= 32'h00000013;
+
         end else begin
-        valid_F_D_r   <= flush ? 1'b0 : (stall_M_X_D_F ? valid_F_D_r : valid_F_D_w);
-        PC_F_D_r      <= flush ? 32'd0 : (stall_M_X_D_F ? PC_F_D_r      : PC_F_D_w);
-        PC_D_X_r <= PC_D_X_w;
-        PC_X_M_r <= PC_X_M_w;
-        PC_M_W_r <= PC_M_W_w;
-        PC4_D_X_r <= PC4_D_X_w;
-        PC4_X_M_r <= PC4_X_M_w;
-        PC4_M_W_r <= PC4_M_W_w;
-        target_addr_D_X_r <= target_addr_D_X_w;
-        next_PC_M_W_r <= next_PC_M_W_w;
+            // F/D
+            valid_F_D_r   <= flush ? 1'b0 : (stall_M_X_D_F ? valid_F_D_r : valid_F_D_w); //inserted here
+            PC_F_D_r      <= flush ? 32'd0 : (stall_M_X_D_F ? PC_F_D_r : PC_F_D_w); //inserted here
+            instruction_r <= flush ? 32'h00000013 : (stall_M_X_D_F ? instruction_r : instruction_w); //inserted here
 
-        isJALR_X_M_r <= isJALR_X_M_w;
-        Jump_X_M_r <= Jump_X_M_w;
-        Jump_M_W_r <= Jump_M_W_w;
-        // BranchEqual_X_M_r <= BranchEqual_X_M_w;
-        // BranchLT_X_M_r <= BranchLT_X_M_w;
-        // Branch_X_M_r <= Branch_X_M_w;
-        MemRead_X_M_r <= stall_M_X ? 1'b0 : MemRead_X_M_w;
-        MemtoReg_X_M_r <= stall_M_X ? 1'b0 : MemtoReg_X_M_w;
-        MemtoReg_M_W_r <= stall_M ? 1'b0 : MemtoReg_M_W_w;
-        RegWrite_X_M_r <= stall_M_X ? 1'b0 : RegWrite_X_M_w;
-        RegWrite_M_W_r <= stall_M ? 1'b0 : RegWrite_M_W_w;
-        IsUInstruct_X_M_r <= stall_M_X ? 1'b0 : IsUInstruct_X_M_w;
-        IsUInstruct_M_W_r <= stall_M ? 1'b0 : IsUInstruct_M_W_w;
-        RegWrite_D_X_r    <= (stall_M_X_D | flush) ? 1'b0     : RegWrite_D_X_w;
-        MemRead_D_X_r     <= (stall_M_X_D | flush) ? 1'b0     : MemRead_D_X_w;
-        MemWrite_D_X_r    <= (stall_M_X_D | flush) ? 1'b0     : MemWrite_D_X_w;
-        Jump_D_X_r        <= (stall_M_X_D | flush) ? 1'b0     : Jump_D_X_w;
-        Branch_D_X_r      <= (stall_M_X_D | flush) ? 1'b0     : Branch_D_X_w;
-        BranchEqual_D_X_r <= (stall_M_X_D | flush) ? 1'b0     : BranchEqual_D_X_w;
-        BranchLT_D_X_r    <= (stall_M_X_D | flush) ? 1'b0     : BranchLT_D_X_w;
-        MemtoReg_D_X_r    <= (stall_M_X_D | flush) ? 1'b0     : MemtoReg_D_X_w;
-        isJALR_D_X_r      <= (stall_M_X_D | flush) ? 1'b0     : isJALR_D_X_w;
-        rd_waddr_D_X_r    <= (stall_M_X_D | flush) ? 5'd0     : rd_waddr_D_X_w;
-        halt_D_X_r        <= (stall_M_X_D | flush) ? 1'b0     : halt_D_X_w;
-        trapD_D_X_r       <= (stall_M_X_D | flush) ? 1'b0     : trapD_D_X_w;
-        IsUInstruct_D_X_r <= (stall_M_X_D | flush) ? 1'b0     : IsUInstruct_D_X_w;
-        UpperType_D_X_r   <= (stall_M_X_D | flush) ? 1'b0     : UpperType_D_X_w;
-        ALUSrc_D_X_r      <= (stall_M_X_D | flush) ? 1'b0     : ALUSrc_D_X_w;
-        PC_D_X_r          <= (stall_M_X_D | flush) ? 32'd0    : PC_D_X_w;
-        PC4_D_X_r         <= (stall_M_X_D | flush) ? 32'd0    : PC4_D_X_w;
+            // D/X : hold on stall_M_X, bubble on stall_D, clear on flush
+            RegWrite_D_X_r    <= flush ? 1'b0 : (stall_D_from_F ? RegWrite_D_X_r    : (stall_D ? 1'b0  : RegWrite_D_X_w)); //inserted here
+            MemRead_D_X_r     <= flush ? 1'b0 : (stall_D_from_F ? MemRead_D_X_r     : (stall_D ? 1'b0  : MemRead_D_X_w)); //inserted here
+            MemWrite_D_X_r    <= flush ? 1'b0 : (stall_D_from_F ? MemWrite_D_X_r    : (stall_D ? 1'b0  : MemWrite_D_X_w)); //inserted here
+            Jump_D_X_r        <= flush ? 1'b0 : (stall_D_from_F ? Jump_D_X_r        : (stall_D ? 1'b0  : Jump_D_X_w)); //inserted here
+            Branch_D_X_r      <= flush ? 1'b0 : (stall_D_from_F ? Branch_D_X_r      : (stall_D ? 1'b0  : Branch_D_X_w)); //inserted here
+            BranchEqual_D_X_r <= flush ? 1'b0 : (stall_D_from_F ? BranchEqual_D_X_r : (stall_D ? 1'b0  : BranchEqual_D_X_w)); //inserted here
+            BranchLT_D_X_r    <= flush ? 1'b0 : (stall_D_from_F ? BranchLT_D_X_r    : (stall_D ? 1'b0  : BranchLT_D_X_w)); //inserted here
+            MemtoReg_D_X_r    <= flush ? 1'b0 : (stall_D_from_F ? MemtoReg_D_X_r    : (stall_D ? 1'b0  : MemtoReg_D_X_w)); //inserted here
+            isJALR_D_X_r      <= flush ? 1'b0 : (stall_D_from_F ? isJALR_D_X_r      : (stall_D ? 1'b0  : isJALR_D_X_w)); //inserted here
+            rd_waddr_D_X_r    <= flush ? 5'd0 : (stall_D_from_F ? rd_waddr_D_X_r    : (stall_D ? 5'd0  : rd_waddr_D_X_w)); //inserted here
+            halt_D_X_r        <= flush ? 1'b0 : (stall_D_from_F ? halt_D_X_r        : (stall_D ? 1'b0  : halt_D_X_w)); //inserted here
+            trapD_D_X_r       <= flush ? 1'b0 : (stall_D_from_F ? trapD_D_X_r       : (stall_D ? 1'b0  : trapD_D_X_w)); //inserted here
+            IsUInstruct_D_X_r <= flush ? 1'b0 : (stall_D_from_F ? IsUInstruct_D_X_r : (stall_D ? 1'b0  : IsUInstruct_D_X_w)); //inserted here
+            UpperType_D_X_r   <= flush ? 1'b0 : (stall_D_from_F ? UpperType_D_X_r   : (stall_D ? 1'b0  : UpperType_D_X_w)); //inserted here
+            ALUSrc_D_X_r      <= flush ? 1'b0 : (stall_D_from_F ? ALUSrc_D_X_r      : (stall_D ? 1'b0  : ALUSrc_D_X_w)); //inserted here
 
+            PC_D_X_r          <= flush ? 32'd0 : (stall_D_from_F ? PC_D_X_r         : (stall_D ? 32'd0 : PC_D_X_w)); //inserted here
+            PC4_D_X_r         <= flush ? 32'd0 : (stall_D_from_F ? PC4_D_X_r        : (stall_D ? 32'd0 : PC4_D_X_w)); //inserted here
 
-        rd_waddr_X_M_r <= stall_M_X ? 1'b0 : rd_waddr_X_M_w;
-        rd_waddr_M_W_r <= stall_M ? 1'b0 : rd_waddr_M_W_w;
+            reg1_r            <= flush ? 32'd0 : (stall_D_from_F ? reg1_r         : reg1_w); //inserted here
+            reg2_r            <= flush ? 32'd0 : (stall_D_from_F ? reg2_r         : reg2_w); //inserted here
+            imm_r             <= flush ? 32'd0 : (stall_D_from_F ? imm_r          : imm_w); //inserted here
+            funct3_r          <= flush ? 3'd0  : (stall_D_from_F ? funct3_r       : funct3_w); //inserted here
+            i_opsel_r         <= flush ? 3'd0  : (stall_D_from_F ? i_opsel_r      : i_opsel_w); //inserted here
+            i_sub_r           <= flush ? 1'b0  : (stall_D_from_F ? i_sub_r        : i_sub_w); //inserted here
+            i_unsigned_r      <= flush ? 1'b0  : (stall_D_from_F ? i_unsigned_r   : i_unsigned_w); //inserted here
+            i_arith_r         <= flush ? 1'b0  : (stall_D_from_F ? i_arith_r      : i_arith_w); //inserted here
 
-        ALU_X_M_r <= stall_M_X ? 1'b0 : ALU_X_M_w;
-        ALU_M_W_r <= stall_M ? 1'b0 : ALU_M_W_w;
-        uimm_X_M_r <= stall_M_X ? 1'b0 : uimm_X_M_w;
-        uimm_M_W_r <= stall_M ? 1'b0 : uimm_M_W_w;
-        mem_read_M_W_r <= stall_M ? 1'b0 : mem_read_M_W_w;
+            rs1_raddr_D_X_r   <= flush ? 5'd0  : (stall_D_from_F ? rs1_raddr_D_X_r  : (stall_D ? rs1_raddr_D_X_r : rs1_raddr_D_X_w)); //inserted here
+            rs2_raddr_D_X_r   <= flush ? 5'd0  : (stall_D_from_F ? rs2_raddr_D_X_r  : (stall_D ? rs2_raddr_D_X_r : rs2_raddr_D_X_w)); //inserted here
+            rs1_rdata_D_X_r   <= flush ? 32'd0 : (stall_D_from_F ? rs1_rdata_D_X_r  : (stall_D ? rs1_rdata_D_X_r : rs1_rdata_D_X_w)); //inserted here
+            rs2_rdata_D_X_r   <= flush ? 32'd0 : (stall_D_from_F ? rs2_rdata_D_X_r  : (stall_D ? rs2_rdata_D_X_r : rs2_rdata_D_X_w)); //inserted here
 
-        //changed to add flush or stall_D 
-        reg1_r <= flush ? 32'd0 : (stall_M_X_D ? reg1_r : reg1_w);
-        reg2_r <= flush ? 32'd0 : (stall_M_X_D ? reg2_r : reg2_w);
-        imm_r <= flush ? 32'd0 : (stall_M_X_D ? imm_r : imm_w);
-        funct3_r <= flush ? 3'd0  : (stall_M_X_D ? funct3_r : funct3_w);
-        i_opsel_r <= flush ? 3'd0 : (stall_M_X_D ? i_opsel_r : i_opsel_w);
-        i_sub_r <= flush ? 1'b0 : (stall_M_X_D ? i_sub_r : i_sub_w);
-        i_unsigned_r <= flush ? 1'b0 : (stall_M_X_D ? i_unsigned_r : i_unsigned_w);
-        i_arith_r <= flush ? 1'b0 : (stall_M_X_D ? i_arith_r : i_arith_w);
+            inst_D_X_r        <= flush ? 32'd0 : (stall_D_from_F ? inst_D_X_r       : (stall_D ? 32'd0 : inst_D_X_w)); //inserted here
+            valid_D_X_r       <= flush ? 1'b0  : (stall_D_from_F ? valid_D_X_r      : (stall_D ? 1'b0  : valid_D_X_w)); //inserted here
 
-        eq_r <= stall_M_X ? 1'b0 : eq_w;
-        slt_r <= stall_M_X ? 1'b0 : slt_w;
-        mem_unsigned_r <= stall_M_X ? 1'b0 : mem_unsigned_w;
-        dmem_addr_r <= stall_M_X ? 32'd0 : dmem_addr_w;
-        dmem_mask_r <= stall_M_X ? 4'd0 : dmem_mask_w;
-        reg2_X_M_r <= stall_M_X ? 32'd0 : reg2_X_M_w;
+            // X/M : hold on stall_M_X
+            target_addr_D_X_r <= stall_M_X ? target_addr_D_X_r : target_addr_D_X_w;
+            isJALR_X_M_r      <= stall_M_X ? isJALR_X_M_r      : isJALR_X_M_w;
+            Jump_X_M_r        <= stall_M_X ? Jump_X_M_r        : Jump_X_M_w;
+            MemRead_X_M_r     <= stall_M_X ? MemRead_X_M_r     : MemRead_X_M_w;
+            MemtoReg_X_M_r    <= stall_M_X ? MemtoReg_X_M_r    : MemtoReg_X_M_w;
+            RegWrite_X_M_r    <= stall_M_X ? RegWrite_X_M_r    : RegWrite_X_M_w;
+            IsUInstruct_X_M_r <= stall_M_X ? IsUInstruct_X_M_r : IsUInstruct_X_M_w;
 
-        trapD_X_M_r <= stall_M_X ? 1'b0 : trapD_X_M_w;
-        trapD_M_W_r <= stall_M ? 1'b0 : trapD_M_W_w;
-        trapX_X_M_r <= stall_M_X ? 1'b0 : trapX_X_M_w;
-        trapX_M_W_r <= stall_M ? 1'b0 : trapX_M_W_w;
+            PC_X_M_r          <= stall_M_X ? PC_X_M_r          : PC_X_M_w;
+            PC4_X_M_r         <= stall_M_X ? PC4_X_M_r         : PC4_X_M_w;
 
-        //added flushing + stall_D stuff here 
-        rs1_raddr_D_X_r <= flush ? 5'd0 : (stall_D ? rs1_raddr_D_X_r : rs1_raddr_D_X_w);
-        rs1_raddr_X_M_r <= stall_M_X ? 5'd0 : rs1_raddr_X_M_w;
-        rs1_raddr_M_W_r <= stall_M ? 5'd0 : rs1_raddr_M_W_w;
-        rs2_raddr_D_X_r <= flush ? 5'd0 : (stall_D ? rs2_raddr_D_X_r : rs2_raddr_D_X_w);
-        rs2_raddr_X_M_r <= stall_M_X ? 5'd0 : rs2_raddr_X_M_w;
-        rs2_raddr_M_W_r <= stall_M ? 5'd0 : rs2_raddr_M_W_w;
-        rs1_rdata_D_X_r <= flush ? 32'd0 : (stall_D ? rs1_rdata_D_X_r : rs1_rdata_D_X_w);
-        rs1_rdata_X_M_r <= stall_M_X ? 32'd0 : rs1_rdata_X_M_w;
-        rs1_rdata_M_W_r <= stall_M ? 32'd0 : rs1_rdata_M_W_w;
-        rs2_rdata_D_X_r <= flush ? 32'd0 : (stall_D ? rs2_rdata_D_X_r : rs2_rdata_D_X_w);
-        rs2_rdata_X_M_r <= stall_M_X ? 32'd0 : rs2_rdata_X_M_w;
-        rs2_rdata_M_W_r <= stall_M ? 32'd0 : rs2_rdata_M_W_w;
+            rd_waddr_X_M_r    <= stall_M_X ? rd_waddr_X_M_r    : rd_waddr_X_M_w;
+            ALU_X_M_r         <= stall_M_X ? ALU_X_M_r         : ALU_X_M_w;
+            uimm_X_M_r        <= stall_M_X ? uimm_X_M_r        : uimm_X_M_w;
 
-        dmem_addr_X_M_r <= stall_M_X ? 32'd0 : dmem_addr_X_M_w;
-        dmem_addr_M_W_r <= stall_M ? 32'd0 : dmem_addr_M_W_w;
-        dmem_rdata_X_M_r <= stall_M_X ? 32'd0 : dmem_rdata_X_M_w;
-        dmem_rdata_M_W_r <= stall_M ? 32'd0 : dmem_rdata_M_W_w;
-        dmem_ren_X_M_r <= stall_M_X ? 1'b0 : dmem_ren_X_M_w;
-        dmem_ren_M_W_r <= stall_M ? 1'b0 : dmem_ren_M_W_w;
-        dmem_wen_X_M_r <= stall_M_X ? 1'b0 : dmem_wen_X_M_w;
-        dmem_wen_M_W_r <= stall_M ? 1'b0 : dmem_wen_M_W_w;
-        dmem_mask_X_M_r <= stall_M_X ? 4'd0 : dmem_mask_X_M_w;
-        dmem_mask_M_W_r <= stall_M ? 4'd0 : dmem_mask_M_W_w;
-        dmem_wdata_X_M_r <= stall_M_X ? 32'd0 : dmem_wdata_X_M_w;
-        dmem_wdata_M_W_r <= stall_M ? 32'd0 : dmem_wdata_M_W_w;
-        dmem_wdata_ex_r <= stall_M_X ? 32'd0 : dmem_wdata_ex_w;
-        dmem_wen_ex_r <= stall_M_X ? 1'b0 : dmem_wen_ex_w;
+            eq_r              <= stall_M_X ? eq_r              : eq_w;
+            slt_r             <= stall_M_X ? slt_r             : slt_w;
+            mem_unsigned_r    <= stall_M_X ? mem_unsigned_r    : mem_unsigned_w;
+            dmem_addr_r       <= stall_M_X ? dmem_addr_r       : dmem_addr_w;
+            dmem_mask_r       <= stall_M_X ? dmem_mask_r       : dmem_mask_w;
+            reg2_X_M_r        <= stall_M_X ? reg2_X_M_r        : reg2_X_M_w;
 
-        halt_X_M_r <= stall_M_X ? 1'b0 : halt_X_M_w;
-        halt_M_W_r <= stall_M ? 1'b0 : halt_M_W_w;
-        inst_D_X_r <= (stall_D | flush) ? 32'd0 : inst_D_X_w;
-        inst_X_M_r <= stall_M_X ? 32'd0 : inst_X_M_w;
-        inst_M_W_r <= stall_M ? 32'd0 : inst_M_W_w;
-        instruction_r <= flush ? 32'h00000013 : (stall_D ? instruction_r : instruction_w);
+            trapD_X_M_r       <= stall_M_X ? trapD_X_M_r       : trapD_X_M_w;
+            trapX_X_M_r       <= stall_M_X ? trapX_X_M_r       : trapX_X_M_w;
 
-        valid_D_X_r <= (stall_D | flush) ? 1'b0    : valid_D_X_w;
-        valid_X_M_r <= stall_M_X ? 1'b0 : valid_D_X_r;
-        valid_M_W_r <= stall_M ? 1'b0 : valid_X_M_r;
+            rs1_raddr_X_M_r   <= stall_M_X ? rs1_raddr_X_M_r   : rs1_raddr_X_M_w;
+            rs2_raddr_X_M_r   <= stall_M_X ? rs2_raddr_X_M_r   : rs2_raddr_X_M_w;
+            rs1_rdata_X_M_r   <= stall_M_X ? rs1_rdata_X_M_r   : rs1_rdata_X_M_w;
+            rs2_rdata_X_M_r   <= stall_M_X ? rs2_rdata_X_M_r   : rs2_rdata_X_M_w;
+
+            dmem_addr_X_M_r   <= stall_M_X ? dmem_addr_X_M_r   : dmem_addr_X_M_w;
+            dmem_rdata_X_M_r  <= stall_M_X ? dmem_rdata_X_M_r  : dmem_rdata_X_M_w;
+            dmem_ren_X_M_r    <= stall_M_X ? dmem_ren_X_M_r    : dmem_ren_X_M_w;
+            dmem_wen_X_M_r    <= stall_M_X ? dmem_wen_X_M_r    : dmem_wen_X_M_w;
+            dmem_mask_X_M_r   <= stall_M_X ? dmem_mask_X_M_r   : dmem_mask_X_M_w;
+            dmem_wdata_X_M_r  <= stall_M_X ? dmem_wdata_X_M_r  : dmem_wdata_X_M_w;
+            dmem_wdata_ex_r   <= stall_M_X ? dmem_wdata_ex_r   : dmem_wdata_ex_w;
+            dmem_wen_ex_r     <= stall_M_X ? dmem_wen_ex_r     : dmem_wen_ex_w;
+
+            halt_X_M_r        <= stall_M_X ? halt_X_M_r        : halt_X_M_w;
+            inst_X_M_r        <= stall_M_X ? inst_X_M_r        : inst_X_M_w;
+            valid_X_M_r       <= stall_M_X ? valid_X_M_r       : valid_D_X_r;
+            // M/W : hold on stall_M
+            next_PC_M_W_r     <= stall_M ? next_PC_M_W_r : next_PC_M_W_w; //inserted here
+            Jump_M_W_r        <= stall_M ? Jump_M_W_r : Jump_M_W_w; //inserted here
+            MemtoReg_M_W_r    <= stall_M ? MemtoReg_M_W_r : MemtoReg_M_W_w; //inserted here
+            RegWrite_M_W_r    <= stall_M ? RegWrite_M_W_r : RegWrite_M_W_w; //inserted here
+            IsUInstruct_M_W_r <= stall_M ? IsUInstruct_M_W_r : IsUInstruct_M_W_w; //inserted here
+
+            PC_M_W_r          <= stall_M ? PC_M_W_r : PC_M_W_w; //inserted here
+            PC4_M_W_r         <= stall_M ? PC4_M_W_r : PC4_M_W_w; //inserted here
+
+            rd_waddr_M_W_r    <= stall_M ? rd_waddr_M_W_r : rd_waddr_M_W_w; //inserted here
+            ALU_M_W_r         <= stall_M ? ALU_M_W_r : ALU_M_W_w; //inserted here
+            uimm_M_W_r        <= stall_M ? uimm_M_W_r : uimm_M_W_w; //inserted here
+            mem_read_M_W_r    <= stall_M ? mem_read_M_W_r : mem_read_M_W_w; //inserted here
+
+            trapD_M_W_r       <= stall_M ? trapD_M_W_r : trapD_M_W_w; //inserted here
+            trapX_M_W_r       <= stall_M ? trapX_M_W_r : trapX_M_W_w; //inserted here
+
+            rs1_raddr_M_W_r   <= stall_M ? rs1_raddr_M_W_r : rs1_raddr_M_W_w; //inserted here
+            rs2_raddr_M_W_r   <= stall_M ? rs2_raddr_M_W_r : rs2_raddr_M_W_w; //inserted here
+            rs1_rdata_M_W_r   <= stall_M ? rs1_rdata_M_W_r : rs1_rdata_M_W_w; //inserted here
+            rs2_rdata_M_W_r   <= stall_M ? rs2_rdata_M_W_r : rs2_rdata_M_W_w; //inserted here
+
+            dmem_addr_M_W_r   <= stall_M ? dmem_addr_M_W_r : dmem_addr_M_W_w; //inserted here
+            dmem_rdata_M_W_r  <= stall_M ? dmem_rdata_M_W_r : dmem_rdata_M_W_w; //inserted here
+            dmem_ren_M_W_r    <= stall_M ? dmem_ren_M_W_r : dmem_ren_M_W_w; //inserted here
+            dmem_wen_M_W_r    <= stall_M ? dmem_wen_M_W_r : dmem_wen_M_W_w; //inserted here
+            dmem_mask_M_W_r   <= stall_M ? dmem_mask_M_W_r : dmem_mask_M_W_w; //inserted here
+            dmem_wdata_M_W_r  <= stall_M ? dmem_wdata_M_W_r : dmem_wdata_M_W_w; //inserted here
+
+            halt_M_W_r        <= stall_M ? halt_M_W_r : halt_M_W_w; //inserted here
+            inst_M_W_r        <= stall_M ? inst_M_W_r : inst_M_W_w; //inserted here
+            valid_M_W_r       <= stall_M ? valid_M_W_r : valid_X_M_r; //inserted here
         end
     end
 
     rf #(1) reg_file (
         i_clk, i_rst,
-        // Register read port 1, with input address [0, 31] and output data.
         rs1_raddr_D_X_w, reg1_w,
-        // Register read port 2, with input address [0, 31] and output data.
         rs2_raddr_D_X_w, reg2_w,
-        // Write register enable, address [0, 31] and input data.
         i_reg_write_en, i_reg_write_addr, i_reg_write_data
     );
 
-    // ***** BUILD CONNECTIONS *****
     fetch #(RESET_ADDR) fetch_inst (
         i_rst,
         i_clk,
+        i_imem_ready,    //inserted here
+        i_imem_valid,    //inserted here
         i_imem_rdata,
         next_PC_to_fetch,
+        stall_M_X_D,     //inserted here
+        branch_taken,
         o_imem_raddr,
+        o_imem_ren,      //inserted here
+        fetch_wait,      //inserted here
         PC_F_D_w,
-        instruction_w,
-        branch_taken //added for branch control
+        instruction_w
     );
-
 
     decode d (
         i_clk,
         instruction_r,
-        // output mux values
         Jump_D_X_w, BranchEqual_D_X_w, BranchLT_D_X_w, Branch_D_X_w,
         MemRead_D_X_w, MemWrite_D_X_w, MemtoReg_D_X_w,
-        ALUSrc_D_X_w, //1 if reg 0 if imm
+        ALUSrc_D_X_w,
         RegWrite_D_X_w, IsUInstruct_D_X_w, UpperType_D_X_w, isJALR_D_X_w,
-        // register and immediate values
         reg1_w, reg2_w, imm_w,
-        // ALU values
         funct3_w, i_opsel_w, i_sub_w, i_unsigned_w, i_arith_w,
-        // Register accesses
         rs1_raddr_D_X_w, rs2_raddr_D_X_w, rd_waddr_D_X_w,
-        // Retire instructions
         halt_D_X_w, inst_D_X_w, trapD_D_X_w,
         rs1_rdata_D_X_w, rs2_rdata_D_X_w,
-        // PC
         PC_F_D_r, PC_D_X_w, PC4_D_X_w,
-        //harzard detection stuff
-        RegWrite_D_X_r, MemRead_D_X_r, rd_waddr_D_X_r,   // EX stage
-        RegWrite_X_M_r, rd_waddr_X_M_r,   // MEM stage
-        RegWrite_M_W_r, rd_waddr_M_W_r,   // WB stage
+        RegWrite_D_X_r, MemRead_D_X_r, rd_waddr_D_X_r,
+        RegWrite_X_M_r, rd_waddr_X_M_r,
+        RegWrite_M_W_r, rd_waddr_M_W_r,
         stall_D,
-        branch_taken //added for branch control
+        branch_taken
     );
 
     execute x (
         i_clk, stall_X, i_dmem_ready,
-        // ALU inputs
         reg1_r, reg2_r, imm_r, funct3_r, i_opsel_r, i_sub_r, i_unsigned_r, i_arith_r,
-        // signals related to PC, branch, and ALU
         PC_D_X_r, PC4_D_X_r, ALU_X_M_w, eq_w, slt_w, target_addr_D_X_w, PC_X_M_w, PC4_X_M_w,
-        // signals for proper memory access
         mem_unsigned_w, dmem_mask_w, dmem_addr_w, dmem_wdata_ex_w, reg2_X_M_w,
-        // input mux signals
         ALUSrc_D_X_r, isJALR_D_X_r, Jump_D_X_r, BranchEqual_D_X_r, BranchLT_D_X_r, Branch_D_X_r,
         MemRead_D_X_r, MemtoReg_D_X_r, MemWrite_D_X_r, rd_waddr_D_X_r,
         RegWrite_D_X_r, UpperType_D_X_r, IsUInstruct_D_X_r,
-        // output mux signals
-        isJALR_X_M_w, Jump_X_M_w, //BranchEqual_X_M_w, BranchLT_X_M_w, Branch_X_M_w,
+        isJALR_X_M_w, Jump_X_M_w,
         MemRead_X_M_w, MemtoReg_X_M_w, dmem_wen_ex_w,
         rd_waddr_X_M_w, RegWrite_X_M_w, IsUInstruct_X_M_w,
-        // U type result
         uimm_X_M_w,
-        // input retire instructions
         halt_D_X_r, inst_D_X_r, trapD_D_X_r,
         rs1_rdata_D_X_r, rs2_rdata_D_X_r,
         rs1_raddr_D_X_r, rs2_raddr_D_X_r,
         valid_D_X_r,
-        // output retire instructions
         halt_X_M_w, inst_X_M_w, trapD_X_M_w,
         rs1_rdata_X_M_w, rs2_rdata_X_M_w,
         rs1_raddr_X_M_w, rs2_raddr_X_M_w,
         trapX_X_M_w,
         dmem_wdata_X_M_w, dmem_wen_X_M_w,
         valid_X_M_w,
-
-        branch_taken, //added for branch control
-
-        // forwarding
+        branch_taken,
         exExForwardingResult, wb_data,
         reg1_ex_forward, reg2_ex_forward,
         reg1_mem_forward, reg2_mem_forward
     );
 
     memory_student m (
-        i_clk, stall_M, i_dmem_ready,
-        // signals sent to data memory
+        i_clk,
+        i_dmem_ready, //inserted here
+        i_dmem_valid, //inserted here
         dmem_mask_r, mem_unsigned_r, dmem_addr_r, reg2_X_M_r,
-        // ALU signal
         ALU_X_M_r,
-        // Branch and PC signals
-        /*eq_r, slt_r,*/ target_addr_D_X_r, PC_X_M_r, PC4_X_M_r, PC_M_W_w, //next_PC_M_W_w,
-        // Results to choose between in WB stage
+        target_addr_D_X_r, PC_X_M_r, PC4_X_M_r, PC_M_W_w,
         mem_read_M_W_w, ALU_M_W_w, uimm_M_W_w,
-        // input Mux signals
-        isJALR_X_M_r, Jump_X_M_r, //BranchEqual_X_M_r, BranchLT_X_M_r, Branch_X_M_r,
-        MemRead_X_M_r, MemtoReg_X_M_r, //MemWrite_X_M_r,
+        isJALR_X_M_r, Jump_X_M_r,
+        MemRead_X_M_r, MemtoReg_X_M_r,
         rd_waddr_X_M_r, RegWrite_X_M_r, IsUInstruct_X_M_r,
         uimm_X_M_r,
-        // output Mux signals
         Jump_M_W_w, MemtoReg_M_W_w, rd_waddr_M_W_w, RegWrite_M_W_w, IsUInstruct_M_W_w,
-        // dmem
         i_dmem_rdata, o_dmem_ren,
-        // input retire instructions
         halt_X_M_r, inst_X_M_r, trapD_X_M_r,
         rs1_rdata_X_M_r, rs2_rdata_X_M_r,
         rs1_raddr_X_M_r, rs2_raddr_X_M_r,
         trapX_X_M_r,
         dmem_wdata_X_M_r, dmem_wen_X_M_r,
         valid_X_M_r,
-        // output retire instructions
         halt_M_W_w, inst_M_W_w, trapD_M_W_w,
         rs1_rdata_M_W_w, rs2_rdata_M_W_w,
         rs1_raddr_M_W_w, rs2_raddr_M_W_w,
@@ -742,67 +719,50 @@ module hart #(
         dmem_mask_M_W_w, dmem_addr_M_W_w, dmem_wdata_M_W_w,
         dmem_ren_M_W_w, dmem_wen_M_W_w, dmem_rdata_M_W_w,
         valid_M_W_w,
-        // forwarding result
         exExForwardingResult
     );
-
 
     writeback w (
         i_clk,
         PC_M_W_r,
         next_PC_M_W_r,
-        // results to choose between
         mem_read_M_W_r, ALU_M_W_r, uimm_M_W_r,
         wb_data,
         o_retire_pc,
         next_PC_W_F,
-        // input mux signals
         Jump_M_W_r, MemtoReg_M_W_r, rd_waddr_M_W_r,
         RegWrite_M_W_r, IsUInstruct_M_W_r,
-        // output signals
         wb_en,
         wb_addr,
-        // input retire instructions
         halt_M_W_r, inst_M_W_r, trapD_M_W_r,
         rs1_rdata_M_W_r, rs2_rdata_M_W_r,
         rs1_raddr_M_W_r, rs2_raddr_M_W_r,
         trapX_M_W_r,
         dmem_mask_M_W_r, dmem_addr_M_W_r, dmem_wdata_M_W_r,
         dmem_ren_M_W_r, dmem_wen_M_W_r, dmem_rdata_M_W_r,
-        // output retire instructions
         halt_W_F, inst_W_F, trapD_W_F,
         rs1_rdata_W_F, rs2_rdata_W_F,
         rs1_raddr_W_F, rs2_raddr_W_F,
         trapX_W_F,
         dmem_mask_W_F, dmem_addr_W_F, dmem_wdata_W_F,
         dmem_ren_W_F, dmem_wen_W_F, dmem_rdata_W_F,
-
-        //new input
-        valid_M_W_r,   // new input
+        valid_M_W_r,
         valid_W_F
     );
 
     exExForwarding eef (
-        // ex source addresses
         rs1_raddr_D_X_r, rs2_raddr_D_X_r,
-        // mem destination address
         rd_waddr_X_M_r,
-        // mem signals
         RegWrite_X_M_r,
         MemRead_X_M_r,
-        // forwarding results
         reg1_ex_forward,
         reg2_ex_forward
     );
 
     memExForwarding mef (
-        // ex source addresses
         rs1_raddr_D_X_r, rs2_raddr_D_X_r,
-        // mem destination address
         rd_waddr_M_W_r,
-        // mem signals
         RegWrite_M_W_r,
-        // forwarding results
         reg1_mem_forward,
         reg2_mem_forward
     );

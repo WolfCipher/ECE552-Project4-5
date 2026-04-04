@@ -1,34 +1,67 @@
-  
+`default_nettype none
+
 module fetch #(
     parameter RESET_ADDR = 32'h00000000
 ) (
-    input i_rst, 
-	input i_clk,
-	input wire [31:0] i_imem_rdata, // data from mem
-	input wire [31:0] next_pc,
-	
-	output wire [31:0] o_imem_raddr,
-	output wire [31:0] pc_to_decode,
-	output wire [31:0] instruction,
-	input branch_taken // add for branch handler stuff
-	
+    input  wire        i_rst,
+    input  wire        i_clk,
+    input  wire        i_imem_ready,   //inserted here
+    input  wire        i_imem_valid,   //inserted here
+    input  wire [31:0] i_imem_rdata,
+    input  wire [31:0] next_pc,
+    input  wire        i_stall_F,      //inserted here
+    input  wire        branch_taken,
+
+    output wire [31:0] o_imem_raddr,
+    output wire        o_imem_ren,     //inserted here
+    output wire        o_fetch_wait,   //inserted here
+    output wire [31:0] pc_to_decode,
+    output wire [31:0] instruction
 );
 
-	reg [31:0] pc;
+    reg [31:0] pc;
+    reg [31:0] instruction_r;          //inserted here
+    reg [31:0] pc_to_decode_r;         //inserted here
+    reg        inst_valid_r;           //inserted here
+    reg        req_outstanding_r;      //inserted here
 
-	assign instruction = (branch_taken) ? 32'h00100073 : i_imem_rdata; // what the instruction says
-	assign o_imem_raddr = pc;
-	assign pc_to_decode = pc;
+    assign o_imem_raddr = pc;
+
+    assign o_imem_ren =
+        i_imem_ready &
+        ~req_outstanding_r &
+        ~inst_valid_r &
+        ~i_stall_F; //inserted here
+
+    assign o_fetch_wait = ~inst_valid_r; //inserted here
+
+    assign instruction  = branch_taken ? 32'h00100073 : instruction_r; //inserted here
+    assign pc_to_decode = pc_to_decode_r; //inserted here
 
     always @(posedge i_clk) begin
-        if (i_rst) pc <= RESET_ADDR; // if we need to rset set to base addr
-        else pc <= next_pc; //otherwise just take the next instruciton that we found
+        if (i_rst) begin
+            pc <= RESET_ADDR;
+            instruction_r <= 32'h00000013;   //inserted here
+            pc_to_decode_r <= RESET_ADDR;    //inserted here
+            inst_valid_r <= 1'b0;            //inserted here
+            req_outstanding_r <= 1'b0;       //inserted here
+        end else begin
+            if (o_imem_ren) begin
+                req_outstanding_r <= 1'b1;   //inserted here
+            end
+
+            if (i_imem_valid) begin
+                instruction_r <= i_imem_rdata;   //inserted here
+                pc_to_decode_r <= pc;            //inserted here
+                inst_valid_r <= 1'b1;            //inserted here
+                req_outstanding_r <= 1'b0;       //inserted here
+            end else if (inst_valid_r && !i_stall_F) begin
+                pc <= next_pc;                   //inserted here
+                inst_valid_r <= 1'b0;            //inserted here
+            end
+        end
     end
-
-
-
 
 endmodule
 
 `default_nettype wire
-
