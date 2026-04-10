@@ -1,0 +1,473 @@
+m255
+K4
+z2
+!s11f vlog 2020.1 2020.02, Feb 28 2020
+13
+!s112 1.1
+!i10d 8192
+!i10e 25
+!i10f 100
+cModel Technology
+Z0 dC:/Users/minec/Pictures/Documents/UW/ECE552/ECE552-Project4-5/project6-and-7/tb
+vadder
+Z1 !s110 1775340948
+!i10b 1
+!s100 7iAHOGj@QRYT5z4LBS2Cd0
+Z2 !s11b Dg1SIo80bB@j0V0VzS_@n1
+I:IHT79U^35edmh0=0LMN31
+Z3 VDg1SIo80bB@j0V0VzS_@n1
+R0
+Z4 w1772062389
+Z5 8../../project2/alu.v
+Z6 F../../project2/alu.v
+!i122 17
+L0 73 10
+Z7 OV;L;2020.1;71
+r1
+!s85 0
+31
+Z8 !s108 1775340948.000000
+Z9 !s107 stall_mem_tb.v|../rtl/writeback.v|../rtl/memExForwarding.v|../rtl/memory_student.v|../rtl/hart.v|../rtl/fetch.v|../rtl/exExForwarding.v|../rtl/execute.v|../rtl/decode.v|../rtl/tb_memory.v|../../project2/rf.v|../../project2/imm.v|../../project2/alu.v|
+Z10 !s90 -work|work|../../project2/alu.v|../../project2/imm.v|../../project2/rf.v|../rtl/tb_memory.v|../rtl/decode.v|../rtl/execute.v|../rtl/exExForwarding.v|../rtl/fetch.v|../rtl/hart.v|../rtl/memory_student.v|../rtl/memExForwarding.v|../rtl/writeback.v|stall_mem_tb.v|
+!i113 1
+Z11 o-work work
+Z12 tCvgOpt 0
+valu
+R1
+!i10b 1
+!s100 ]VzJXD?GOnXMdJWROfNP^2
+R2
+I?<Z5lOYDhHhJfjfQ;ZJKV3
+R3
+R0
+R4
+R5
+R6
+!i122 17
+L0 8 64
+R7
+r1
+!s85 0
+31
+R8
+R9
+R10
+!i113 1
+R11
+R12
+vand32
+R1
+!i10b 1
+!s100 Y4L6B_CTM7AN68T7e2QP:2
+R2
+Iz_T0Sii@bzIRQjkgLHKbl1
+R3
+R0
+R4
+R5
+R6
+!i122 17
+L0 203 7
+R7
+r1
+!s85 0
+31
+R8
+R9
+R10
+!i113 1
+R11
+R12
+vdecode
+Z13 !s110 1775344673
+!i10b 1
+!s100 F[8[6a8O_80^=9hjokB`O2
+R2
+I9E4BBXg`UzGRG<_DRBJ5F2
+R3
+R0
+w1773787380
+8../rtl/decode.v
+F../rtl/decode.v
+!i122 32
+L0 2 184
+R7
+r1
+!s85 0
+31
+Z14 !s108 1775344673.000000
+!s107 stall_mem_tb.v|../rtl/writeback.v|../rtl/tb_memory.v|../rtl/memory_student.v|../rtl/memExForwarding.v|../rtl/hart.v|../rtl/fetch.v|../rtl/exExForwarding.v|../rtl/execute.v|../rtl/decode.v|
+Z15 !s90 -work|work|../rtl/decode.v|../rtl/execute.v|../rtl/exExForwarding.v|../rtl/fetch.v|../rtl/hart.v|../rtl/memExForwarding.v|../rtl/memory_student.v|../rtl/tb_memory.v|../rtl/writeback.v|stall_mem_tb.v|
+!i113 1
+R11
+R12
+vexecute
+R13
+!i10b 1
+!s100 97Xcl<WEoVijAAK@XW?nh1
+R2
+I=[7<2Rkc@fmK^>[Ei06mf2
+R3
+R0
+w1775337708
+8../rtl/execute.v
+F../rtl/execute.v
+!i122 32
+L0 3 198
+R7
+r1
+!s85 0
+31
+R14
+Z16 !s107 stall_mem_tb.v|../rtl/writeback.v|../rtl/tb_memory.v|../rtl/memory_student.v|../rtl/memExForwarding.v|../rtl/hart.v|../rtl/fetch.v|../rtl/exExForwarding.v|../rtl/execute.v|../rtl/decode.v|
+R15
+!i113 1
+R11
+R12
+vexExForwarding
+R13
+!i10b 1
+!s100 lGk>E8lG0=7K5o:[hUILc1
+R2
+IfFj7A=Kh<Z2NgZE=eJ4ZL3
+R3
+R0
+w1775343883
+8../rtl/exExForwarding.v
+F../rtl/exExForwarding.v
+!i122 32
+L0 1 16
+R7
+r1
+!s85 0
+31
+R14
+R16
+R15
+!i113 1
+R11
+R12
+nex@ex@forwarding
+vfetch
+R13
+!i10b 1
+!s100 h:0HW?hFA@bM5^4:<4WkL3
+R2
+IQ4n@D00Hlfiz;ZeHR=len2
+R3
+R0
+w1775343370
+8../rtl/fetch.v
+F../rtl/fetch.v
+!i122 32
+L0 3 74
+R7
+r1
+!s85 0
+31
+R14
+R16
+R15
+!i113 1
+R11
+R12
+vhart
+Z17 !s110 1775344674
+!i10b 1
+!s100 nA[[2H^77=izHVW8j3WQ=1
+R2
+I:FkQF2YSl23[^hm4N5ZHB3
+R3
+R0
+w1775344672
+8../rtl/hart.v
+F../rtl/hart.v
+!i122 32
+L0 3 766
+R7
+r1
+!s85 0
+31
+R14
+R16
+R15
+!i113 1
+R11
+R12
+vhart_tb
+R17
+!i10b 1
+!s100 nZGaPbNX5@nB`V;F7gT871
+R2
+I>YoKNNONa^;]k0Y6nUAl:1
+R3
+R0
+Z18 w1774022178
+8stall_mem_tb.v
+Fstall_mem_tb.v
+!i122 32
+L0 2 207
+R7
+r1
+!s85 0
+31
+R14
+R16
+R15
+!i113 1
+R11
+R12
+vimm
+R1
+!i10b 1
+!s100 ClRCdzdXia@f:YS2GZSWE0
+R2
+I6cBl6LNNYRzP1Do`GI4FL2
+R3
+R0
+w1772067206
+8../../project2/imm.v
+F../../project2/imm.v
+!i122 17
+L0 6 47
+R7
+r1
+!s85 0
+31
+R8
+R9
+R10
+!i113 1
+R11
+R12
+vmemExForwarding
+R17
+!i10b 1
+!s100 >d@g4jQlZ9:[EbPiObkGd2
+R2
+I6;DcNLW8QO6zKZX^cgaD91
+R3
+R0
+w1775343875
+8../rtl/memExForwarding.v
+F../rtl/memExForwarding.v
+!i122 32
+L0 1 14
+R7
+r1
+!s85 0
+31
+R14
+R16
+R15
+!i113 1
+R11
+R12
+nmem@ex@forwarding
+vmemory
+R17
+!i10b 1
+!s100 OLG9<oQ6Y2C3D;RRZI_FW1
+R2
+ISU;>71:jI=2>53ZEPm@f]2
+R3
+R0
+R18
+8../rtl/tb_memory.v
+F../rtl/tb_memory.v
+!i122 32
+L0 8 141
+R7
+r1
+!s85 0
+31
+R14
+R16
+R15
+!i113 1
+R11
+R12
+vmemory_student
+R17
+!i10b 1
+!s100 5XV9;zPmEb55PVFQ?8EWz3
+R2
+IHnYFoQciGS18cDk96>=8h0
+R3
+R0
+w1775338350
+8../rtl/memory_student.v
+F../rtl/memory_student.v
+!i122 32
+L0 4 173
+R7
+r1
+!s85 0
+31
+R14
+R16
+R15
+!i113 1
+R11
+R12
+vor32
+R1
+!i10b 1
+!s100 UV>G77jz:Ilf?gXGkW=eQ0
+R2
+IJ`TATUOm]kX^G@EUH`mc21
+R3
+R0
+R4
+R5
+R6
+!i122 17
+L0 195 7
+R7
+r1
+!s85 0
+31
+R8
+R9
+R10
+!i113 1
+R11
+R12
+vrf
+R1
+!i10b 1
+!s100 iO9FOCb<gRAf<nkYWKe^`2
+R2
+IWHT[<]7c^:KnH:^kP@WJ51
+R3
+R0
+w1773790535
+8../../project2/rf.v
+F../../project2/rf.v
+!i122 17
+L0 8 96
+R7
+r1
+!s85 0
+31
+R8
+R9
+R10
+!i113 1
+R11
+R12
+vsll
+R1
+!i10b 1
+!s100 gVIIAf;JbOWS=jeggZKDc3
+R2
+I@X@VDM7cdoOU_KnM1U^S^0
+R3
+R0
+R4
+R5
+R6
+!i122 17
+L0 84 38
+R7
+r1
+!s85 0
+31
+R8
+R9
+R10
+!i113 1
+R11
+R12
+vslt
+R1
+!i10b 1
+!s100 Cg5PnhHL2WAgRIHRQW?W;3
+R2
+I@USQ<9cahW2<FRa[;1`NS1
+R3
+R0
+R4
+R5
+R6
+!i122 17
+L0 123 20
+R7
+r1
+!s85 0
+31
+R8
+R9
+R10
+!i113 1
+R11
+R12
+vsr
+R1
+!i10b 1
+!s100 NfAi4J3f_hMd`1W]FZ=zY0
+R2
+IoR>381XFFa[mESmogNRT52
+R3
+R0
+R4
+R5
+R6
+!i122 17
+L0 152 42
+R7
+r1
+!s85 0
+31
+R8
+R9
+R10
+!i113 1
+R11
+R12
+vwriteback
+R17
+!i10b 1
+!s100 JX9PnmIG@6h1T0X;A^BAj0
+R2
+I5?a28HTz99eHQQ?4h[c7;1
+R3
+R0
+w1773076335
+8../rtl/writeback.v
+F../rtl/writeback.v
+!i122 32
+L0 1 84
+R7
+r1
+!s85 0
+31
+R14
+R16
+R15
+!i113 1
+R11
+R12
+vxor32
+R1
+!i10b 1
+!s100 E2UAjLK24BDKbPh^[M>lM0
+R2
+IF=BJAm<BfZiPS4`AchF@G3
+R3
+R0
+R4
+R5
+R6
+!i122 17
+L0 144 7
+R7
+r1
+!s85 0
+31
+R8
+R9
+R10
+!i113 1
+R11
+R12
