@@ -111,17 +111,22 @@ module cache (
     assign o_busy      = (i_req_ren || i_req_wen) && !hit; //if there is a r/w request and we didn't get a hit assert
 
 
-
-
+    // break down the address into tag, set index, and block offset
     
 
-// break down the address into tag, set index, and block offset
+    always @(posedge i_clk) begin
+        if (i_req_ren || i_req_wen) begin
+            
+            // update lru[set_index] --- 0 for way 0 is LRU, 1 for way 1 is LRU
+            // upon a hit, the LRU should be updated to be the other way, as the hit way is now the MRU
+            // upon a miss, the LRU should change value, since the LRU way will be replaced with the new block, making it the MRU, and the other way the LRU
+            lru[req_set] <= hit0 ? 1'b1 : (hit1 ? 1'b0 : ~lru[req_set]);
 
-    // update lru[set_index] --- 0 for way 0 is LRU, 1 for way 1 is LRU
+            // update valid[set_index]
+            assign valid[req_set][lru[req_set]] = 1'b1;
 
-    // update valid[set_index]
-
-
+        end
+   
     // WRITE-THROUGH, WRITE-ALLOCATE
     wire [31:0] shift_data, mem_wdata;
 
@@ -135,6 +140,9 @@ module cache (
                         {i_req_wdata[7:0], 24'd0}; // (i_req_mask == 4'b1000)
 
     assign mem_wdata = shift_data;
+
+    // miss handling
+
 endmodule
 
 `default_nettype wire
