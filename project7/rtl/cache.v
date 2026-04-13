@@ -108,7 +108,7 @@ module cache (
                             : datas1[req_set][req_word];
 
     assign o_res_rdata = hit ? hit_data : (i_mem_ready && i_mem_ren) ? i_mem_rdata : 32'd0; // set result data
-    assign o_busy      = (i_req_ren || i_req_wen) && !hit; //if there is a r/w request and we didn't get a hit assert
+    //assign o_busy      = (i_req_ren || i_req_wen) && !hit; //if there is a r/w request and we didn't get a hit assert
     assign o_mem_ren = i_req_ren && !hit;
     assign o_mem_wen = i_req_wen && !hit;
 
@@ -147,14 +147,14 @@ module cache (
     reg read_resp_seen_r = 1'b0; // Tracks whether the accepted load has completed.
     reg [31:0] read_data_r = 32'd0;
 
-    // dmem read request:
+    // mem read request:
     // send exactly once when memory is ready and a load is present,
-    // then keep the stage stalled until the corresponding i_dmem_valid arrives.
+    // then keep the stage stalled until the corresponding i_mem_valid arrives.
     wire load_active;
-    assign load_active = i_req_ren || i_req_wen;
-    assign o_mem_ren = I_req_ren & ~read_req_sent_r & i_mem_ready;
-    assign o_mem_wen = i_req_wen & ~read_req_sent_r & i_mem_ready;
-    assign stall = load_active & ~read_resp_seen_r;
+    assign load_active = (i_req_ren || i_req_wen) && !hit;
+    assign o_mem_ren = i_req_ren & ~read_req_sent_r & i_mem_ready & !hit;
+    assign o_mem_wen = i_req_wen & ~read_req_sent_r & i_mem_ready & !hit;
+    assign o_busy = load_active & ~read_resp_seen_r;
 
     always @(posedge i_clk) begin
         if (!load_active) begin
