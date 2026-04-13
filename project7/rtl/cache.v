@@ -107,16 +107,17 @@ module cache (
     wire [31:0] hit_data = hit0 ? datas0[req_set][req_word]
                             : datas1[req_set][req_word];
 
-    assign o_res_rdata = hit_data; // set result data
+    assign o_res_rdata = hit ? hit_data : (i_mem_ready && i_mem_ren) ? i_mem_rdata : 32'd0; // set result data
     assign o_busy      = (i_req_ren || i_req_wen) && !hit; //if there is a r/w request and we didn't get a hit assert
-
+    assign o_mem_ren = i_req_ren && !hit;
+    assign o_mem_wen = i_req_wen && !hit;
 
     // break down the address into tag, set index, and block offset
     
 
     always @(posedge i_clk) begin
         if (i_req_ren || i_req_wen) begin
-            
+
             // update lru[set_index] --- 0 for way 0 is LRU, 1 for way 1 is LRU
             // upon a hit, the LRU should be updated to be the other way, as the hit way is now the MRU
             // upon a miss, the LRU should change value, since the LRU way will be replaced with the new block, making it the MRU, and the other way the LRU
@@ -142,6 +143,33 @@ module cache (
     assign mem_wdata = shift_data;
 
     // miss handling
+    reg read_req_sent_r = 1'b0; // Tracks whether a load request has been accepted.
+    reg read_resp_seen_r = 1'b0; // Tracks whether the accepted load has completed.
+    reg [31:0] read_data_r = 32'd0;
+
+    // dmem read request:
+    // send exactly once when memory is ready and a load is present,
+    // then keep the stage stalled until the corresponding i_dmem_valid arrives.
+    wire load_active;
+    assign load_active = i_req_ren || i_req_wen;
+    assign o_mem_ren = I_req_ren & ~read_req_sent_r & i_mem_ready;
+    assign o_mem_wen = i_req_wen & ~read_req_sent_r & i_mem_ready;
+    assign stall = load_active & ~read_resp_seen_r;
+
+    always @(posedge i_clk) begin
+        if (!load_active) begin
+            read_req_sent_r <= 1'b0;
+            read_resp_seen_r <= 1'b0;
+        end else begin
+            if (o_mem_ren) begin
+                read_req_sent_r <= 1'b1;
+            end
+            if (i_mem_valid && read_req_sent_r) begin
+                read_data_r <= i_mem_rdata;
+                read_resp_seen_r <= 1'b1;
+            end
+        end
+    end
 
 endmodule
 
