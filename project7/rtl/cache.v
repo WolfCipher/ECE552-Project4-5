@@ -111,10 +111,8 @@ module cache (
     assign o_busy      = (i_req_ren || i_req_wen) && !hit; //if there is a r/w request and we didn't get a hit assert
 
 
-// break down the address into tag, set index, and block offset
-
+    // break down the address into tag, set index, and block offset
     // update lru[set_index] --- 0 for way 0 is LRU, 1 for way 1 is LRU
-
     // update valid[set_index]
 
     always @(posedge i_clk) begin
