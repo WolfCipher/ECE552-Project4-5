@@ -74,10 +74,10 @@ module cache (
     // 32 sets * 2 ways per set * 16 bytes per way = 1K cache
     localparam O = 4;            // 4 bit offset => 16 byte cache line
     localparam S = 5;            // 5 bit set index => 32 sets
-    localparam DEPTH = 2 ** S;   // 32 sets
+    localparam DEPTH = 32;   // 32 sets
     localparam W = 2;            // 2 way set associative, NMRU
     localparam T = 32 - O - S;   // 23 bit tag
-    localparam D = 2 ** O / 4;   // 16 bytes per line / 4 bytes per word = 4 words per line
+    localparam D = 16 / 4;   // 16 bytes per line / 4 bytes per word = 4 words per line
 
     // The following memory arrays model the cache structure. As this is
     // an internal implementation detail, you are *free* to modify these
@@ -93,6 +93,7 @@ module cache (
 
     // Fill in your implementation here.
 
+    // READ STUFF
     // split into parts
     wire [T-1:0] req_tag  = i_req_addr[31:9];  
     wire [S-1:0] req_set  = i_req_addr[8:4];        
@@ -107,13 +108,33 @@ module cache (
                             : datas1[req_set][req_word];
 
     assign o_res_rdata = hit_data; // set result data
-    assign o_busy      = (i_req_ren || i_req_wen) && !hit; //if there is a r/w request and we didn't get a hit
+    assign o_busy      = (i_req_ren || i_req_wen) && !hit; //if there is a r/w request and we didn't get a hit assert
+
+
 
 
     
 
+// break down the address into tag, set index, and block offset
+
+    // update lru[set_index] --- 0 for way 0 is LRU, 1 for way 1 is LRU
+
+    // update valid[set_index]
 
 
+    // WRITE-THROUGH, WRITE-ALLOCATE
+    wire [31:0] shift_data, mem_wdata;
+
+    wire bit0 = (i_req_mask == 4'b0001) || (i_req_mask == 4'b0011) || (i_req_mask == 4'b0101) || (i_req_mask == 4'b0111) || (i_req_mask == 4'b1001) || (i_req_mask == 4'b1011) || (i_req_mask == 4'b1101) || (i_req_mask == 4'b1111);
+    wire bit1 = (i_req_mask == 4'b0010) || (i_req_mask == 4'b0110) || (i_req_mask == 4'b1010) || (i_req_mask == 4'b1110);
+    wire bit2 = (i_req_mask == 4'b0100) || (i_req_mask == 4'b1100);
+
+    assign shift_data = (bit0) ? i_req_wdata :
+                        (bit1) ? {i_req_wdata[23:0], 8'd0} :
+                        (bit2) ? {i_req_wdata[15:0], 16'd0} :
+                        {i_req_wdata[7:0], 24'd0}; // (i_req_mask == 4'b1000)
+
+    assign mem_wdata = shift_data;
 endmodule
 
 `default_nettype wire
