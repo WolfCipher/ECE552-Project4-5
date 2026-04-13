@@ -107,10 +107,10 @@ module cache (
     wire [31:0] hit_data = hit0 ? datas0[req_set][req_word]
                             : datas1[req_set][req_word];
 
-    assign o_res_rdata = hit ? hit_data : (i_mem_ready && i_mem_ren) ? i_mem_rdata : 32'd0; // set result data
+    assign o_res_rdata = hit ? hit_data : (i_mem_valid && i_mem_ren) ? i_mem_rdata : 32'd0; // set result data
     //assign o_busy      = (i_req_ren || i_req_wen) && !hit; //if there is a r/w request and we didn't get a hit assert
-    assign o_mem_ren = i_req_ren && !hit;
-    assign o_mem_wen = i_req_wen && !hit;
+    //assign o_mem_ren = i_req_ren && !hit;
+    //assign o_mem_wen = i_req_wen && !hit;
 
     // break down the address into tag, set index, and block offset
     
@@ -145,7 +145,7 @@ module cache (
     // miss handling
     reg read_req_sent_r = 1'b0; // Tracks whether a load request has been accepted.
     reg read_resp_seen_r = 1'b0; // Tracks whether the accepted load has completed.
-    reg [31:0] read_data_r = 32'd0;
+    //reg [31:0] read_data_r = 32'd0;
 
     // mem read request:
     // send exactly once when memory is ready and a load is present,
@@ -165,7 +165,7 @@ module cache (
                 read_req_sent_r <= 1'b1;
             end
             if (i_mem_valid && read_req_sent_r) begin
-                read_data_r <= i_mem_rdata;
+                //read_data_r <= i_mem_rdata;
                 read_resp_seen_r <= 1'b1;
             end
         end
