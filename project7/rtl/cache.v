@@ -92,6 +92,28 @@ module cache (
     reg       lru   [DEPTH - 1:0];
 
     // Fill in your implementation here.
+
+    // split into parts
+    wire [T-1:0] req_tag  = i_req_addr[31:9];  
+    wire [S-1:0] req_set  = i_req_addr[8:4];        
+    wire [1:0]   req_word = i_req_addr[3:2];  
+
+    wire hit0 = valid[req_set][0] && (tags0[req_set] == req_tag);
+    wire hit1 = valid[req_set][1] && (tags1[req_set] == req_tag);
+    wire hit  = hit0 || hit1;
+    
+    // select corresponding hit data
+    wire [31:0] hit_data = hit0 ? datas0[req_set][req_word]
+                            : datas1[req_set][req_word];
+
+    assign o_res_rdata = hit_data; // set result data
+    assign o_busy      = (i_req_ren || i_req_wen) && !hit; //if there is a r/w request and we didn't get a hit
+
+
+    
+
+
+
 endmodule
 
 `default_nettype wire
