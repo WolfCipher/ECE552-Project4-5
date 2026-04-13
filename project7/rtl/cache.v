@@ -93,7 +93,7 @@ module cache (
 
     // Fill in your implementation here.
 
-    // READ STUFF
+    // Break address up
     // split into parts
     wire [T-1:0] req_tag  = i_req_addr[31:9];  
     wire [S-1:0] req_set  = i_req_addr[8:4];        
@@ -111,30 +111,40 @@ module cache (
     assign o_busy      = (i_req_ren || i_req_wen) && !hit; //if there is a r/w request and we didn't get a hit assert
 
 
-
-
-    
-
 // break down the address into tag, set index, and block offset
 
     // update lru[set_index] --- 0 for way 0 is LRU, 1 for way 1 is LRU
 
     // update valid[set_index]
 
+    always @(posedge i_clk) begin
+        if (i_req_wen && hit) begin
+            if (hit0) begin
+                if (i_req_mask[0]) datas0[req_set][req_word][7:0]   <= i_req_wdata[7:0];
+                if (i_req_mask[1]) datas0[req_set][req_word][15:8]  <= i_req_wdata[15:8];
+                if (i_req_mask[2]) datas0[req_set][req_word][23:16] <= i_req_wdata[23:16];
+                if (i_req_mask[3]) datas0[req_set][req_word][31:24] <= i_req_wdata[31:24];
+                lru[req_set] <= 1'b1; // way 0 used so evict one next
+            end 
+            else begin // hit1
+                if (i_req_mask[0]) datas1[req_set][req_word][7:0]   <= i_req_wdata[7:0];
+                if (i_req_mask[1]) datas1[req_set][req_word][15:8]  <= i_req_wdata[15:8];
+                if (i_req_mask[2]) datas1[req_set][req_word][23:16] <= i_req_wdata[23:16];
+                if (i_req_mask[3]) datas1[req_set][req_word][31:24] <= i_req_wdata[31:24];
+                lru[req_set] <= 1'b0; // swap to evict 0 next
+            end
+        end
+    end
 
     // WRITE-THROUGH, WRITE-ALLOCATE
-    wire [31:0] shift_data, mem_wdata;
+    //get new data
+    wire [31:0] mem_wdata;
+    assign mem_wdata[7:0]   = i_req_mask[0] ? i_req_wdata[7:0]   : hit_data[7:0];
+    assign mem_wdata[15:8]  = i_req_mask[1] ? i_req_wdata[15:8]  : hit_data[15:8];
+    assign mem_wdata[23:16] = i_req_mask[2] ? i_req_wdata[23:16] : hit_data[23:16];
+    assign mem_wdata[31:24] = i_req_mask[3] ? i_req_wdata[31:24] : hit_data[31:24];
 
-    wire bit0 = (i_req_mask == 4'b0001) || (i_req_mask == 4'b0011) || (i_req_mask == 4'b0101) || (i_req_mask == 4'b0111) || (i_req_mask == 4'b1001) || (i_req_mask == 4'b1011) || (i_req_mask == 4'b1101) || (i_req_mask == 4'b1111);
-    wire bit1 = (i_req_mask == 4'b0010) || (i_req_mask == 4'b0110) || (i_req_mask == 4'b1010) || (i_req_mask == 4'b1110);
-    wire bit2 = (i_req_mask == 4'b0100) || (i_req_mask == 4'b1100);
 
-    assign shift_data = (bit0) ? i_req_wdata :
-                        (bit1) ? {i_req_wdata[23:0], 8'd0} :
-                        (bit2) ? {i_req_wdata[15:0], 16'd0} :
-                        {i_req_wdata[7:0], 24'd0}; // (i_req_mask == 4'b1000)
-
-    assign mem_wdata = shift_data;
 endmodule
 
 `default_nettype wire
