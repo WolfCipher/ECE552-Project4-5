@@ -166,7 +166,6 @@ module cache (
     // miss handling
     reg req_sent_r = 1'b0; // Tracks whether a load request has been accepted.
     reg resp_seen_r = 1'b0; // Tracks whether the accepted load has completed.
-    //reg [31:0] read_data_r = 32'd0;
 
     // mem read request:
     // send exactly once when memory is ready and a load is present,
@@ -186,9 +185,6 @@ module cache (
                 req_sent_r <= 1'b1;
             end
             if (i_mem_valid && req_sent_r) begin
-                if (i_req_ren) begin
-                    read_data_r <= i_mem_rdata;
-                end
                 resp_seen_r <= 1'b1;
             end
         end
