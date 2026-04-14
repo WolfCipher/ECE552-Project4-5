@@ -116,7 +116,7 @@ module cache (
     wire [31:0] hit_data = hit0 ? datas0[req_set][req_word]
                             : datas1[req_set][req_word];
 
-    assign o_res_rdata = hit ? hit_data : (i_mem_valid && ren) ? i_mem_rdata : 32'd0; // set result data
+    assign o_res_rdata = hit ? hit_data : (i_mem_valid) ? i_mem_rdata : 32'd0; // set result data
     //assign o_busy      = (i_req_ren || i_req_wen) && !hit; //if there is a r/w request and we didn't get a hit assert
     //assign o_mem_ren = i_req_ren && !hit;
     //assign o_mem_wen = i_req_wen && !hit;
@@ -128,7 +128,7 @@ module cache (
     wire [T-1:0] new_tag1 = (hit || new_lru == 1'b0) ? tags1[req_set] : req_tag;
     
     always @(posedge i_clk) begin
-        if ((i_req_ren || i_req_wen) && (hit || i_mem_valid)) begin
+        if ((i_req_ren || i_req_wen) && (hit)) begin
 
             // update lru[set_index] --- 0 for way 0 is LRU, 1 for way 1 is LRU
             // upon a hit, the LRU should be updated to be the other way, as the hit way is now the MRU
@@ -208,6 +208,11 @@ module cache (
             valid[30][1] <= 1'b0;
             valid[31][0] <= 1'b0;
             valid[31][1] <= 1'b0;
+            busy <= 1'b0;
+            req_sent_r <= 1'b0;
+            resp_seen_r <= 1'b0;
+            ren <= 1'b0;
+            wen <= 1'b0;
         end
     end
 
@@ -245,11 +250,11 @@ module cache (
     assign load_active = (i_req_ren && !hit) || (i_req_wen);
     assign o_mem_addr = addr_r; // word aligned address
     assign o_mem_wdata = wdata_r;
-    assign o_mem_ren = ren & ~req_sent_r & i_mem_ready & !hit;
+    assign o_mem_ren = ren & ~req_sent_r & i_mem_ready;
     assign o_mem_wen = wen & ~req_sent_r & i_mem_ready;
     assign o_busy = busy; //load_active & ~resp_seen_r & !hit;
-    wire [31:0] miss_data_0 = (new_lru == 1'b1) ? (i_req_ren ? i_mem_rdata : mem_wdata) : datas0[req_set][req_word]; // data to update cache with on a miss, either from memory for a load, or the new data for a store
-    wire [31:0] miss_data_1 = (new_lru == 1'b0) ? (i_req_ren ? i_mem_rdata : mem_wdata) : datas1[req_set][req_word];
+    wire [31:0] miss_data_0 = (new_lru == 1'b1) ? (ren ? i_mem_rdata : wdata_r) : datas0[req_set][req_word]; // data to update cache with on a miss, either from memory for a load, or the new data for a store
+    wire [31:0] miss_data_1 = (new_lru == 1'b0) ? (ren ? i_mem_rdata : wdata_r) : datas1[req_set][req_word];
 
     always @(posedge i_clk) begin
         if (!load_active && !busy) begin
@@ -274,8 +279,18 @@ module cache (
                 busy <= 1'b0;
                 ren <= 1'b0;
                 wen <= 1'b0;
-                datas0[req_set][0] <= miss_data_0;
-                datas1[req_set][0] <= miss_data_1;
+                datas0[req_set][req_word] <= miss_data_0;
+                datas1[req_set][req_word] <= miss_data_1;
+
+                // LRU, VALID, TAG
+                lru[req_set] <= new_lru;
+
+                // update valid[set_index]
+                valid[req_set][~new_lru] <= 1'b1;
+
+                // update tag[set_index][way]
+                tags0[req_set] <= new_tag0;
+                tags1[req_set] <= new_tag1;
             end
         end
         if (i_req_ren && !hit) begin
