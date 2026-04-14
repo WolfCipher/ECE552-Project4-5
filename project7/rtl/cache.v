@@ -112,22 +112,29 @@ module cache (
     //assign o_mem_ren = i_req_ren && !hit;
     //assign o_mem_wen = i_req_wen && !hit;
 
-    // break down the address into tag, set index, and block offset
-    
 
+    // VALID, LRU, and TAG updates
+    wire new_lru = hit0 ? 1'b1 : (hit1 ? 1'b0 : ~lru[req_set]);
+    wire [T-1:0] new_tag0 = (hit || new_lru == 1'b0) ? tags0[req_set] : req_tag;
+    wire [T-1:0] new_tag1 = (hit || new_lru == 1'b1) ? tags1[req_set] : req_tag;
+    
     always @(posedge i_clk) begin
         if ((i_req_ren || i_req_wen) && (hit || i_mem_valid)) begin
 
             // update lru[set_index] --- 0 for way 0 is LRU, 1 for way 1 is LRU
             // upon a hit, the LRU should be updated to be the other way, as the hit way is now the MRU
             // upon a miss, the LRU should change value, since the LRU way will be replaced with the new block, making it the MRU, and the other way the LRU
-            lru[req_set] <= hit0 ? 1'b1 : (hit1 ? 1'b0 : ~lru[req_set]);
+            lru[req_set] <= new_lru;
 
             // update valid[set_index]
-            assign valid[req_set][lru[req_set]] = 1'b1;
+            valid[req_set][~new_lru] <= 1'b1;
+
+            // update tag[set_index][way]
+            tags0[req_set] <= new_tag0;
+            tags1[req_set] <= new_tag1;
 
         end
-   
+    end
 
     always @(posedge i_clk) begin
         if (i_req_wen && hit) begin
@@ -155,19 +162,6 @@ module cache (
     assign mem_wdata[15:8]  = i_req_mask[1] ? i_req_wdata[15:8]  : hit_data[15:8];
     assign mem_wdata[23:16] = i_req_mask[2] ? i_req_wdata[23:16] : hit_data[23:16];
     assign mem_wdata[31:24] = i_req_mask[3] ? i_req_wdata[31:24] : hit_data[31:24];
-
-    // wire [31:0] shift_data, mem_wdata;
-
-    // wire bit0 = (i_req_mask == 4'b0001) || (i_req_mask == 4'b0011) || (i_req_mask == 4'b0101) || (i_req_mask == 4'b0111) || (i_req_mask == 4'b1001) || (i_req_mask == 4'b1011) || (i_req_mask == 4'b1101) || (i_req_mask == 4'b1111);
-    // wire bit1 = (i_req_mask == 4'b0010) || (i_req_mask == 4'b0110) || (i_req_mask == 4'b1010) || (i_req_mask == 4'b1110);
-    // wire bit2 = (i_req_mask == 4'b0100) || (i_req_mask == 4'b1100);
-
-    // assign shift_data = (bit0) ? i_req_wdata :
-    //                     (bit1) ? {i_req_wdata[23:0], 8'd0} :
-    //                     (bit2) ? {i_req_wdata[15:0], 16'd0} :
-    //                     {i_req_wdata[7:0], 24'd0}; // (i_req_mask == 4'b1000)
-
-    // assign mem_wdata = shift_data;
 
     // miss handling
     reg req_sent_r = 1'b0; // Tracks whether a load request has been accepted.
