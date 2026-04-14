@@ -93,6 +93,15 @@ module cache (
 
     // Fill in your implementation here.
 
+    // miss handling variables
+    reg req_sent_r = 1'b0; // Tracks whether a load request has been accepted.
+    reg resp_seen_r = 1'b0; // Tracks whether the accepted load has completed.
+    reg busy = 1'b0; // Tracks whether we are currently in a load request (between accepting a request and seeing the response).
+    reg ren = 1'b0;
+    reg wen = 1'b0;
+    reg [31:0] addr_r = 32'b0;
+    reg [31:0] wdata_r = 32'b0;
+
     // Break address up
     // split into parts
     wire [T-1:0] req_tag  = i_req_addr[31:9];  
@@ -107,7 +116,7 @@ module cache (
     wire [31:0] hit_data = hit0 ? datas0[req_set][req_word]
                             : datas1[req_set][req_word];
 
-    assign o_res_rdata = hit ? hit_data : (i_mem_valid && i_req_ren) ? i_mem_rdata : 32'd0; // set result data
+    assign o_res_rdata = hit ? hit_data : (i_mem_valid && ren) ? i_mem_rdata : 32'd0; // set result data
     //assign o_busy      = (i_req_ren || i_req_wen) && !hit; //if there is a r/w request and we didn't get a hit assert
     //assign o_mem_ren = i_req_ren && !hit;
     //assign o_mem_wen = i_req_wen && !hit;
@@ -229,20 +238,13 @@ module cache (
     assign mem_wdata[23:16] = i_req_mask[2] ? i_req_wdata[23:16] : hit_data[23:16];
     assign mem_wdata[31:24] = i_req_mask[3] ? i_req_wdata[31:24] : hit_data[31:24];
 
-    // miss handling
-    reg req_sent_r = 1'b0; // Tracks whether a load request has been accepted.
-    reg resp_seen_r = 1'b0; // Tracks whether the accepted load has completed.
-    reg busy = 1'b0; // Tracks whether we are currently in a load request (between accepting a request and seeing the response).
-    reg ren = 1'b0;
-    reg wen = 1'b0;
-
     // mem read request:
     // send exactly once when memory is ready and a load is present,
     // then keep the stage stalled until the corresponding i_mem_valid arrives.
     wire load_active;
     assign load_active = (i_req_ren && !hit) || (i_req_wen);
-    assign o_mem_addr = {i_req_addr[31:2], 2'b00}; // word aligned address
-    assign o_mem_wdata = mem_wdata;
+    assign o_mem_addr = addr_r; // word aligned address
+    assign o_mem_wdata = wdata_r;
     assign o_mem_ren = ren & ~req_sent_r & i_mem_ready & !hit;
     assign o_mem_wen = wen & ~req_sent_r & i_mem_ready;
     assign o_busy = busy; //load_active & ~resp_seen_r & !hit;
@@ -256,8 +258,13 @@ module cache (
             ren <= 1'b0;
             wen <= 1'b0;
         end else begin
-            if (load_active && !hit) begin
-                busy <= 1'b1;
+            if (load_active) begin
+                addr_r <= {i_req_addr[31:2], 2'b00};
+                wdata_r <= mem_wdata;
+
+                if (!hit) begin
+                    busy <= 1'b1;
+                end
             end
             if (o_mem_ren || o_mem_wen) begin
                 req_sent_r <= 1'b1;
