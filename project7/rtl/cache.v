@@ -107,7 +107,7 @@ module cache (
     wire [31:0] hit_data = hit0 ? datas0[req_set][req_word]
                             : datas1[req_set][req_word];
 
-    assign o_res_rdata = hit ? hit_data : (i_mem_valid && i_mem_ren) ? i_mem_rdata : 32'd0; // set result data
+    assign o_res_rdata = hit ? hit_data : (i_mem_valid && i_req_ren) ? i_mem_rdata : 32'd0; // set result data
     //assign o_busy      = (i_req_ren || i_req_wen) && !hit; //if there is a r/w request and we didn't get a hit assert
     //assign o_mem_ren = i_req_ren && !hit;
     //assign o_mem_wen = i_req_wen && !hit;
