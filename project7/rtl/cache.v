@@ -115,8 +115,8 @@ module cache (
 
     // VALID, LRU, and TAG updates
     wire new_lru = hit0 ? 1'b1 : (hit1 ? 1'b0 : ~lru[req_set]);
-    wire [T-1:0] new_tag0 = (hit || new_lru == 1'b0) ? tags0[req_set] : req_tag;
-    wire [T-1:0] new_tag1 = (hit || new_lru == 1'b1) ? tags1[req_set] : req_tag;
+    wire [T-1:0] new_tag0 = (hit || new_lru == 1'b1) ? tags0[req_set] : req_tag;
+    wire [T-1:0] new_tag1 = (hit || new_lru == 1'b0) ? tags1[req_set] : req_tag;
     
     always @(posedge i_clk) begin
         if ((i_req_ren || i_req_wen) && (hit || i_mem_valid)) begin
@@ -133,6 +133,72 @@ module cache (
             tags0[req_set] <= new_tag0;
             tags1[req_set] <= new_tag1;
 
+        end
+        if (i_rst) begin
+            valid[0][0] <= 1'b0;
+            valid[0][1] <= 1'b0;
+            valid[1][0] <= 1'b0;
+            valid[1][1] <= 1'b0;
+            valid[2][0] <= 1'b0;
+            valid[2][1] <= 1'b0;
+            valid[3][0] <= 1'b0;
+            valid[3][1] <= 1'b0;
+            valid[4][0] <= 1'b0;
+            valid[4][1] <= 1'b0;
+            valid[5][0] <= 1'b0;
+            valid[5][1] <= 1'b0;
+            valid[6][0] <= 1'b0;
+            valid[6][1] <= 1'b0;
+            valid[7][0] <= 1'b0;
+            valid[7][1] <= 1'b0;
+            valid[8][0] <= 1'b0;
+            valid[8][1] <= 1'b0;
+            valid[9][0] <= 1'b0;
+            valid[9][1] <= 1'b0;
+            valid[10][0] <= 1'b0;
+            valid[10][1] <= 1'b0;
+            valid[11][0] <= 1'b0;
+            valid[11][1] <= 1'b0;
+            valid[12][0] <= 1'b0;
+            valid[12][1] <= 1'b0;
+            valid[13][0] <= 1'b0;
+            valid[13][1] <= 1'b0;
+            valid[14][0] <= 1'b0;
+            valid[14][1] <= 1'b0;
+            valid[15][0] <= 1'b0;
+            valid[15][1] <= 1'b0;
+            valid[16][0] <= 1'b0;
+            valid[16][1] <= 1'b0;
+            valid[17][0] <= 1'b0;
+            valid[17][1] <= 1'b0;
+            valid[18][0] <= 1'b0;
+            valid[18][1] <= 1'b0;
+            valid[19][0] <= 1'b0;
+            valid[19][1] <= 1'b0;
+            valid[20][0] <= 1'b0;
+            valid[20][1] <= 1'b0;
+            valid[21][0] <= 1'b0;
+            valid[21][1] <= 1'b0;
+            valid[22][0] <= 1'b0;
+            valid[22][1] <= 1'b0;
+            valid[23][0] <= 1'b0;
+            valid[23][1] <= 1'b0;
+            valid[24][0] <= 1'b0;
+            valid[24][1] <= 1'b0;
+            valid[25][0] <= 1'b0;
+            valid[25][1] <= 1'b0;
+            valid[26][0] <= 1'b0;
+            valid[26][1] <= 1'b0;
+            valid[27][0] <= 1'b0;
+            valid[27][1] <= 1'b0;
+            valid[28][0] <= 1'b0;
+            valid[28][1] <= 1'b0;
+            valid[29][0] <= 1'b0;
+            valid[29][1] <= 1'b0;
+            valid[30][0] <= 1'b0;
+            valid[30][1] <= 1'b0;
+            valid[31][0] <= 1'b0;
+            valid[31][1] <= 1'b0;
         end
     end
 
@@ -166,27 +232,50 @@ module cache (
     // miss handling
     reg req_sent_r = 1'b0; // Tracks whether a load request has been accepted.
     reg resp_seen_r = 1'b0; // Tracks whether the accepted load has completed.
+    reg busy = 1'b0; // Tracks whether we are currently in a load request (between accepting a request and seeing the response).
+    reg ren = 1'b0;
+    reg wen = 1'b0;
 
     // mem read request:
     // send exactly once when memory is ready and a load is present,
     // then keep the stage stalled until the corresponding i_mem_valid arrives.
     wire load_active;
     assign load_active = (i_req_ren && !hit) || (i_req_wen);
-    assign o_mem_ren = i_req_ren & ~req_sent_r & i_mem_ready & !hit;
-    assign o_mem_wen = i_req_wen & ~req_sent_r & i_mem_ready;
-    assign o_busy = load_active & ~resp_seen_r;
+    assign o_mem_addr = {i_req_addr[31:2], 2'b00}; // word aligned address
+    assign o_mem_wdata = mem_wdata;
+    assign o_mem_ren = ren & ~req_sent_r & i_mem_ready & !hit;
+    assign o_mem_wen = wen & ~req_sent_r & i_mem_ready;
+    assign o_busy = load_active & ~resp_seen_r & !hit;
+    wire [31:0] miss_data_0 = (new_lru == 1'b1) ? (i_req_ren ? i_mem_rdata : mem_wdata) : datas0[req_set][req_word]; // data to update cache with on a miss, either from memory for a load, or the new data for a store
+    wire [31:0] miss_data_1 = (new_lru == 1'b0) ? (i_req_ren ? i_mem_rdata : mem_wdata) : datas1[req_set][req_word];
 
     always @(posedge i_clk) begin
-        if (!load_active) begin
+        if (!load_active && !busy) begin
             req_sent_r <= 1'b0;
             resp_seen_r <= 1'b0;
+            ren <= 1'b0;
+            wen <= 1'b0;
         end else begin
+            if (i_mem_ready) begin
+                busy <= 1'b1;
+            end
             if (o_mem_ren || o_mem_wen) begin
                 req_sent_r <= 1'b1;
             end
             if (i_mem_valid && req_sent_r) begin
                 resp_seen_r <= 1'b1;
+                busy <= 1'b0;
+                ren <= 1'b0;
+                wen <= 1'b0;
+                datas0[req_set][0] <= miss_data_0;
+                datas1[req_set][0] <= miss_data_1;
             end
+        end
+        if (i_req_ren && !hit) begin
+            ren <= 1'b1;
+        end
+        if (i_req_wen) begin
+            wen <= 1'b1;
         end
     end
 
