@@ -172,9 +172,9 @@ module cache (
     // send exactly once when memory is ready and a load is present,
     // then keep the stage stalled until the corresponding i_mem_valid arrives.
     wire load_active;
-    assign load_active = (i_req_ren || i_req_wen) && !hit;
+    assign load_active = (i_req_ren && !hit) || (i_req_wen);
     assign o_mem_ren = i_req_ren & ~req_sent_r & i_mem_ready & !hit;
-    assign o_mem_wen = i_req_wen & ~req_sent_r & i_mem_ready & !hit;
+    assign o_mem_wen = i_req_wen & ~req_sent_r & i_mem_ready;
     assign o_busy = load_active & ~resp_seen_r;
 
     always @(posedge i_clk) begin
