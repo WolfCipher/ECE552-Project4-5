@@ -93,7 +93,7 @@ module cache (
 
     // Fill in your implementation here.
 
-    // READ STUFF
+    // Break address up
     // split into parts
     wire [T-1:0] req_tag  = i_req_addr[31:9];  
     wire [S-1:0] req_set  = i_req_addr[8:4];        
@@ -157,19 +157,32 @@ module cache (
     assign o_busy = load_active & ~read_resp_seen_r;
 
     always @(posedge i_clk) begin
-        if (!load_active) begin
-            read_req_sent_r <= 1'b0;
-            read_resp_seen_r <= 1'b0;
-        end else begin
-            if (o_mem_ren) begin
-                read_req_sent_r <= 1'b1;
-            end
-            if (i_mem_valid && read_req_sent_r) begin
-                //read_data_r <= i_mem_rdata;
-                read_resp_seen_r <= 1'b1;
+        if (i_req_wen && hit) begin
+            if (hit0) begin
+                if (i_req_mask[0]) datas0[req_set][req_word][7:0]   <= i_req_wdata[7:0];
+                if (i_req_mask[1]) datas0[req_set][req_word][15:8]  <= i_req_wdata[15:8];
+                if (i_req_mask[2]) datas0[req_set][req_word][23:16] <= i_req_wdata[23:16];
+                if (i_req_mask[3]) datas0[req_set][req_word][31:24] <= i_req_wdata[31:24];
+                lru[req_set] <= 1'b1; // way 0 used so evict one next
+            end 
+            else begin // hit1
+                if (i_req_mask[0]) datas1[req_set][req_word][7:0]   <= i_req_wdata[7:0];
+                if (i_req_mask[1]) datas1[req_set][req_word][15:8]  <= i_req_wdata[15:8];
+                if (i_req_mask[2]) datas1[req_set][req_word][23:16] <= i_req_wdata[23:16];
+                if (i_req_mask[3]) datas1[req_set][req_word][31:24] <= i_req_wdata[31:24];
+                lru[req_set] <= 1'b0; // swap to evict 0 next
             end
         end
     end
+
+    // WRITE-THROUGH, WRITE-ALLOCATE
+    //get new data
+    wire [31:0] mem_wdata;
+    assign mem_wdata[7:0]   = i_req_mask[0] ? i_req_wdata[7:0]   : hit_data[7:0];
+    assign mem_wdata[15:8]  = i_req_mask[1] ? i_req_wdata[15:8]  : hit_data[15:8];
+    assign mem_wdata[23:16] = i_req_mask[2] ? i_req_wdata[23:16] : hit_data[23:16];
+    assign mem_wdata[31:24] = i_req_mask[3] ? i_req_wdata[31:24] : hit_data[31:24];
+
 
 endmodule
 
