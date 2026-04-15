@@ -246,10 +246,11 @@ module hart #(
     wire fetch_wait;
 
     // Drive the external dmem interface from the MEM stage (registered) signals.
-    assign o_dmem_addr  = dmem_addr_r;
-    assign o_dmem_mask  = dmem_mask_r;
-    assign o_dmem_wdata = dmem_wdata_ex_r;
-    assign o_dmem_wen   = dmem_wen_ex_r;
+    // Replaced with dcache interface
+    // assign o_dmem_addr  = dmem_addr_r;
+    // assign o_dmem_mask  = dmem_mask_r;
+    // assign o_dmem_wdata = dmem_wdata_ex_r;
+    // assign o_dmem_wen   = dmem_wen_ex_r;
 
     wire stall_F, stall_D, stall_X, stall_M;
     wire stall_M_X, stall_M_X_D, stall_M_X_D_F;
@@ -283,7 +284,8 @@ module hart #(
     // Allow the current decoded instruction to advance even when fetch is waiting.
     assign valid_D_X_w = valid_F_D_r & ~stall_D_from_F;
     // valid_X_M_w and valid_M_W_w are driven by execute and memory_student module outputs
-    assign o_retire_valid = valid_W_F;
+    // Suppress retire while MEM is stalling to avoid re-retiring held W-stage state.
+    assign o_retire_valid = valid_W_F & ~stall_M;
 
     // TRAP
     reg trapD_D_X_r, trapD_X_M_r, trapD_M_W_r;
@@ -351,6 +353,10 @@ module hart #(
     assign o_retire_dmem_mask = dmem_mask_W_F;
     assign o_retire_dmem_wdata = dmem_wdata_W_F;
     assign o_retire_dmem_rdata = dmem_rdata_W_F;
+
+    // cache signals
+    wire i_dreq_ren, o_dbusy;
+    wire [31:0] o_dres_rdata;
 
     // HALT
     reg halt_D_X_r, halt_X_M_r, halt_M_W_r;
@@ -688,7 +694,7 @@ module hart #(
     );
 
     execute x (
-        i_clk, stall_X, i_dmem_ready,
+        i_clk, stall_X, o_dbusy, // i_dmem_ready,
         reg1_r, reg2_r, imm_r, funct3_r, i_opsel_r, i_sub_r, i_unsigned_r, i_arith_r,
         PC_D_X_r, PC4_D_X_r, ALU_X_M_w, eq_w, slt_w, target_addr_D_X_w, PC_X_M_w, PC4_X_M_w,
         mem_unsigned_w, dmem_mask_w, dmem_addr_w, dmem_wdata_ex_w, reg2_X_M_w,
@@ -717,8 +723,9 @@ module hart #(
 
     memory_student m (
         i_clk, stall_M,
-        i_dmem_ready, //inserted here
-        i_dmem_valid, //inserted here
+        //i_dmem_ready,
+        o_dbusy, // cache interface
+        //i_dmem_valid, //inserted here
         dmem_mask_r, mem_unsigned_r, dmem_addr_r, reg2_X_M_r,
         ALU_X_M_r,
         target_addr_D_X_r, PC_X_M_r, PC4_X_M_r, PC_M_W_w,
@@ -728,7 +735,7 @@ module hart #(
         rd_waddr_X_M_r, RegWrite_X_M_r, IsUInstruct_X_M_r,
         uimm_X_M_r,
         Jump_M_W_w, MemtoReg_M_W_w, rd_waddr_M_W_w, RegWrite_M_W_w, IsUInstruct_M_W_w,
-        i_dmem_rdata, o_dmem_ren,
+        o_dres_rdata, i_dreq_ren, // cache interface
         halt_X_M_r, inst_X_M_r, trapD_X_M_r,
         rs1_rdata_X_M_r, rs2_rdata_X_M_r,
         rs1_raddr_X_M_r, rs2_raddr_X_M_r,
@@ -790,6 +797,21 @@ module hart #(
         valid_M_W_r,
         reg1_mem_forward,
         reg2_mem_forward
+    );
+
+    cache dcache(
+        // inputs from hart to cache
+        i_clk, i_rst, i_dmem_ready,
+        // outputs from cache to memory
+        o_dmem_addr, o_dmem_ren, o_dmem_wen, o_dmem_wdata,
+        // inputs from memory to cache
+        i_dmem_rdata, i_dmem_valid,
+        // outputs from cache to hart
+        o_dbusy,
+        // inputs from hart modules to cache for requests
+        dmem_addr_r, i_dreq_ren, dmem_wen_ex_r, dmem_mask_r, dmem_wdata_ex_r,
+        // outputs from cache to hart for read responses
+        o_dres_rdata
     );
 
 endmodule

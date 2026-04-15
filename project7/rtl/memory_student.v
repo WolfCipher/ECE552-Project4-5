@@ -4,8 +4,9 @@
 module memory_student(
     input wire i_clk,
     output wire stall,
-    input wire i_dmem_ready, //inserted here
-    input wire i_dmem_valid, //inserted here
+    //input wire i_dmem_ready, //inserted here
+    input wire busy,
+    //input wire i_dmem_valid, //inserted here
     // signals sent to data memory
     input wire [3:0] i_mask,
     input wire i_unsigned,
@@ -91,8 +92,8 @@ module memory_student(
     // then keep the stage stalled until the corresponding i_dmem_valid arrives.
     wire load_active;
     assign load_active = i_MemRead & i_valid;
-    assign o_dmem_ren = load_active & ~read_req_sent_r & i_dmem_ready;
-    assign stall = load_active & ~read_resp_seen_r;
+    assign o_dmem_ren = load_active & ~read_req_sent_r;// & i_dmem_ready;
+    assign stall = busy;//load_active & ~read_resp_seen_r;
 
     always @(posedge i_clk) begin
         if (!load_active) begin
@@ -102,7 +103,7 @@ module memory_student(
             if (o_dmem_ren) begin
                 read_req_sent_r <= 1'b1;
             end
-            if (i_dmem_valid && read_req_sent_r) begin
+            if (!busy/*i_dmem_valid && read_req_sent_r*/) begin
                 read_data_r <= i_dmem_rdata;
                 read_resp_seen_r <= 1'b1;
             end
@@ -113,7 +114,7 @@ module memory_student(
     // only read if read-enabled
     // select bytes using the mask
     wire [31:0] data, masked_data;
-    assign data = i_MemRead ? (i_dmem_valid ? i_dmem_rdata : read_data_r) : 32'd0; //inserted here
+    assign data = i_dmem_rdata;//i_MemRead ? (i_dmem_valid ? i_dmem_rdata : read_data_r) : 32'd0; //inserted here
     assign masked_data[31:24] = data[31:24] & {8{i_mask[3]}};
     assign masked_data[23:16] = data[23:16] & {8{i_mask[2]}};
     assign masked_data[15:8] = data[15:8] & {8{i_mask[1]}};
@@ -170,7 +171,7 @@ module memory_student(
     assign o_dmem_wen = i_dmem_wen;
     assign o_dmem_mask = i_mask;
     assign o_dmem_addr = i_mem_addr;
-    assign o_dmem_rdata = i_dmem_valid ? i_dmem_rdata : read_data_r; //inserted here
+    assign o_dmem_rdata = i_dmem_rdata;//i_dmem_valid ? i_dmem_rdata : read_data_r; //inserted here
     assign o_dmem_ren_retire = i_MemRead & i_valid;
 
 endmodule
