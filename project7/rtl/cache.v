@@ -101,6 +101,11 @@ module cache (
     reg wen = 1'b0;
     reg [31:0] addr_r = 32'b0;
     reg [31:0] wdata_r = 32'b0;
+    reg [S-1:0] miss_set_r = {S{1'b0}};
+    reg [T-1:0] miss_tag_r = {T{1'b0}};
+    reg         miss_way_r = 1'b0;
+    reg [1:0]   miss_word_r = 2'b00;
+    reg [1:0]   fill_word_r = 2'b00;
 
     // Break address up
     // split into parts
@@ -116,7 +121,7 @@ module cache (
     wire [31:0] hit_data = hit0 ? datas0[req_set][req_word]
                             : datas1[req_set][req_word];
 
-    assign o_res_rdata = hit ? hit_data : (i_mem_valid) ? i_mem_rdata : 32'd0; // set result data
+    assign o_res_rdata = hit ? hit_data : i_mem_rdata; // set result data
     //assign o_busy      = (i_req_ren || i_req_wen) && !hit; //if there is a r/w request and we didn't get a hit assert
     //assign o_mem_ren = i_req_ren && !hit;
     //assign o_mem_wen = i_req_wen && !hit;
@@ -124,8 +129,9 @@ module cache (
 
     // VALID, LRU, and TAG updates
     wire new_lru = hit0 ? 1'b1 : (hit1 ? 1'b0 : ~lru[req_set]);
-    wire [T-1:0] new_tag0 = (hit || new_lru == 1'b1) ? tags0[req_set] : req_tag;
-    wire [T-1:0] new_tag1 = (hit || new_lru == 1'b0) ? tags1[req_set] : req_tag;
+    // On a miss, replace the old LRU way and write req_tag into that way.
+    wire [T-1:0] new_tag0 = (!hit && (lru[req_set] == 1'b0)) ? req_tag : tags0[req_set];
+    wire [T-1:0] new_tag1 = (!hit && (lru[req_set] == 1'b1)) ? req_tag : tags1[req_set];
     
     always @(posedge i_clk) begin
         if ((i_req_ren || i_req_wen) && (hit)) begin
@@ -208,6 +214,38 @@ module cache (
             valid[30][1] <= 1'b0;
             valid[31][0] <= 1'b0;
             valid[31][1] <= 1'b0;
+            lru[0] <= 1'b0;
+            lru[1] <= 1'b0;
+            lru[2] <= 1'b0;
+            lru[3] <= 1'b0;
+            lru[4] <= 1'b0;
+            lru[5] <= 1'b0;
+            lru[6] <= 1'b0;
+            lru[7] <= 1'b0;
+            lru[8] <= 1'b0;
+            lru[9] <= 1'b0;
+            lru[10] <= 1'b0;
+            lru[11] <= 1'b0;
+            lru[12] <= 1'b0;
+            lru[13] <= 1'b0;
+            lru[14] <= 1'b0;
+            lru[15] <= 1'b0;
+            lru[16] <= 1'b0;
+            lru[17] <= 1'b0;
+            lru[18] <= 1'b0;
+            lru[19] <= 1'b0;
+            lru[20] <= 1'b0;
+            lru[21] <= 1'b0;
+            lru[22] <= 1'b0;
+            lru[23] <= 1'b0;
+            lru[24] <= 1'b0;
+            lru[25] <= 1'b0;
+            lru[26] <= 1'b0;
+            lru[27] <= 1'b0;
+            lru[28] <= 1'b0;
+            lru[29] <= 1'b0;
+            lru[30] <= 1'b0;
+            lru[31] <= 1'b0;
             busy <= 1'b0;
             req_sent_r <= 1'b0;
             resp_seen_r <= 1'b0;
@@ -248,7 +286,7 @@ module cache (
     // then keep the stage stalled until the corresponding i_mem_valid arrives.
     wire load_active;
     assign load_active = (i_req_ren && !hit) || (i_req_wen);
-    assign o_mem_addr = addr_r; // word aligned address
+    assign o_mem_addr = ren ? {addr_r[31:4], fill_word_r, 2'b00} : addr_r; // line fill on read miss
     assign o_mem_wdata = wdata_r;
     assign o_mem_ren = ren & ~req_sent_r & i_mem_ready;
     assign o_mem_wen = wen & ~req_sent_r & i_mem_ready;
@@ -264,7 +302,27 @@ module cache (
             wen <= 1'b0;
         end else begin
             if (load_active) begin
-                addr_r <= {i_req_addr[31:2], 2'b00};
+                if (!busy) begin
+                    // Start of a new request: clear previous transaction markers.
+                    req_sent_r <= 1'b0;
+                    resp_seen_r <= 1'b0;
+                    fill_word_r <= 2'b00;
+                end
+                if (i_req_ren && !hit && !busy) begin
+                    miss_set_r <= req_set;
+                    miss_tag_r <= req_tag;
+                    miss_way_r <= lru[req_set];
+                    miss_word_r <= req_word;
+                    addr_r <= {i_req_addr[31:4], 4'b0000};
+                end else if (i_req_wen && !hit && !busy) begin
+                    miss_set_r <= req_set;
+                    miss_tag_r <= req_tag;
+                    miss_way_r <= lru[req_set];
+                    miss_word_r <= req_word;
+                    addr_r <= {i_req_addr[31:2], 2'b00};
+                end else begin
+                    addr_r <= {i_req_addr[31:2], 2'b00};
+                end
                 wdata_r <= mem_wdata;
 
                 if (!hit) begin
@@ -274,23 +332,48 @@ module cache (
             if (o_mem_ren || o_mem_wen) begin
                 req_sent_r <= 1'b1;
             end
-            if (i_mem_valid && req_sent_r) begin
+            if (req_sent_r && ren && i_mem_valid) begin
+                if (miss_way_r == 1'b0) begin
+                    datas0[miss_set_r][fill_word_r] <= i_mem_rdata;
+                end else begin
+                    datas1[miss_set_r][fill_word_r] <= i_mem_rdata;
+                end
+
+                if (fill_word_r == 2'b11) begin
+                    resp_seen_r <= 1'b1;
+                    busy <= 1'b0;
+                    ren <= 1'b0;
+                    req_sent_r <= 1'b0;
+
+                    // LRU, VALID, TAG
+                    lru[miss_set_r] <= ~miss_way_r;
+                    valid[miss_set_r][miss_way_r] <= 1'b1;
+                    if (miss_way_r == 1'b0) begin
+                        tags0[miss_set_r] <= miss_tag_r;
+                    end else begin
+                        tags1[miss_set_r] <= miss_tag_r;
+                    end
+                end else begin
+                    fill_word_r <= fill_word_r + 2'b01;
+                    req_sent_r <= 1'b0;
+                end
+            end
+            if (busy && req_sent_r && wen && !ren) begin
                 resp_seen_r <= 1'b1;
                 busy <= 1'b0;
-                ren <= 1'b0;
                 wen <= 1'b0;
-                datas0[req_set][req_word] <= miss_data_0;
-                datas1[req_set][req_word] <= miss_data_1;
+                req_sent_r <= 1'b0;
 
                 // LRU, VALID, TAG
-                lru[req_set] <= new_lru;
-
-                // update valid[set_index]
-                valid[req_set][~new_lru] <= 1'b1;
-
-                // update tag[set_index][way]
-                tags0[req_set] <= new_tag0;
-                tags1[req_set] <= new_tag1;
+                lru[miss_set_r] <= ~miss_way_r;
+                valid[miss_set_r][miss_way_r] <= 1'b1;
+                if (miss_way_r == 1'b0) begin
+                    tags0[miss_set_r] <= miss_tag_r;
+                    datas0[miss_set_r][miss_word_r] <= wdata_r;
+                end else begin
+                    tags1[miss_set_r] <= miss_tag_r;
+                    datas1[miss_set_r][miss_word_r] <= wdata_r;
+                end
             end
         end
         if (i_req_ren && !hit) begin
