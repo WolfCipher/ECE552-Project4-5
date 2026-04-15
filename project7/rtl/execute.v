@@ -3,7 +3,7 @@
 module execute(
     input wire i_clk,
     output wire stall,
-    input wire i_dmem_ready,
+    input wire busy, //input wire i_dmem_ready,
     // ALU inputs
     input wire [31:0] reg1,
     input wire [31:0] reg2,
@@ -88,7 +88,7 @@ module execute(
     input wire forward_W_reg1,
     input wire forward_W_reg2
 );
-    assign stall = i_MemWrite && !i_dmem_ready && i_valid;
+    assign stall = i_MemWrite && busy && i_valid; //i_MemWrite && !i_dmem_ready && i_valid;
 
     // Forwarding
     wire [31:0] reg1_forward, reg2_forward;

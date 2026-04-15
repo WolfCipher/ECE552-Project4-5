@@ -284,7 +284,8 @@ module hart #(
     // Allow the current decoded instruction to advance even when fetch is waiting.
     assign valid_D_X_w = valid_F_D_r & ~stall_D_from_F;
     // valid_X_M_w and valid_M_W_w are driven by execute and memory_student module outputs
-    assign o_retire_valid = valid_W_F;
+    // Suppress retire while MEM is stalling to avoid re-retiring held W-stage state.
+    assign o_retire_valid = valid_W_F & ~stall_M;
 
     // TRAP
     reg trapD_D_X_r, trapD_X_M_r, trapD_M_W_r;
@@ -666,7 +667,7 @@ module hart #(
     );
 
     execute x (
-        i_clk, stall_X, o_dbusy,
+        i_clk, stall_X, o_dbusy, // i_dmem_ready,
         reg1_r, reg2_r, imm_r, funct3_r, i_opsel_r, i_sub_r, i_unsigned_r, i_arith_r,
         PC_D_X_r, PC4_D_X_r, ALU_X_M_w, eq_w, slt_w, target_addr_D_X_w, PC_X_M_w, PC4_X_M_w,
         mem_unsigned_w, dmem_mask_w, dmem_addr_w, dmem_wdata_ex_w, reg2_X_M_w,
@@ -695,8 +696,9 @@ module hart #(
 
     memory_student m (
         i_clk, stall_M,
+        //i_dmem_ready,
         o_dbusy, // cache interface
-        i_dmem_valid, //inserted here
+        //i_dmem_valid, //inserted here
         dmem_mask_r, mem_unsigned_r, dmem_addr_r, reg2_X_M_r,
         ALU_X_M_r,
         target_addr_D_X_r, PC_X_M_r, PC4_X_M_r, PC_M_W_w,
