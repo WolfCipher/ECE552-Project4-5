@@ -77,7 +77,7 @@ module cache (
     localparam DEPTH = 32;   // 32 sets
     localparam W = 2;            // 2 way set associative, NMRU
     localparam T = 32 - O - S;   // 23 bit tag
-    localparam D = 16 / 4;   // 16 bytes per line / 4 bytes per word = 4 words per line
+    localparam D = 4;   // 16 bytes per line / 4 bytes per word = 4 words per line
 
     // The following memory arrays model the cache structure. As this is
     // an internal implementation detail, you are *free* to modify these
