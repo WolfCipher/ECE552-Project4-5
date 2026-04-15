@@ -624,17 +624,44 @@ module hart #(
         i_reg_write_en, i_reg_write_addr, i_reg_write_data
     );
 
+    // cache stuff
+    wire [31:0] imem_raddr;
+    wire        imem_ren;
+    wire        icache_busy;
+    wire [31:0] icache_rdata;
+
+    cache icache (
+        .i_clk       (i_clk),
+        .i_rst       (i_rst),
+        // backing memory side
+        .i_mem_ready (i_mem_ready),
+        .i_mem_rdata (i_mem_rdata),
+        .i_mem_valid (i_mem_valid),
+        .o_mem_addr  (o_mem_addr),
+        .o_mem_ren   (o_mem_ren),
+        .o_mem_wen   (),
+        .o_mem_wdata (),
+        // fetch side
+        .i_req_addr  (imem_raddr),
+        .i_req_ren   (imem_ren),
+        .i_req_wen   (1'b0),
+        .i_req_mask  (4'b1111),
+        .i_req_wdata (32'b0),
+        .o_busy      (icache_busy),
+        .o_res_rdata (icache_rdata)
+    );
+
     fetch #(RESET_ADDR) fetch_inst (
         i_rst,
         i_clk,
-        i_imem_ready,    //inserted here
-        i_imem_valid,    //inserted here
-        i_imem_rdata,
+        ~icache_busy,    // ready when cache not busy
+        ~icache_busy,    // valid when cache not busy
+        icache_rdata, 
         next_PC_to_fetch,
         stall_M_X_D,     //inserted here
         redirect_X,
-        o_imem_raddr,
-        o_imem_ren,      //inserted here
+        imem_raddr,      // these feed INTO the cache
+        imem_ren, 
         fetch_wait,      //inserted here
         PC_F_D_w,
         instruction_w
