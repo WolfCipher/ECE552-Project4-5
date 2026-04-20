@@ -23,12 +23,14 @@ module fetch #(
     reg [31:0] pc_to_decode_r;         //inserted here
     reg        inst_valid_r;           //inserted here
     reg        req_outstanding_r;      //inserted here
+    reg        busy_r;
     reg [31:0] redirect_pc_r;
     reg        redirect_pending_r;
 
     assign o_imem_raddr = pc;
 
     assign o_imem_ren =
+        ~busy_r &
         ~req_outstanding_r &
         ~inst_valid_r &
         ~i_stall_F;
@@ -46,8 +48,8 @@ module fetch #(
 
     assign o_fetch_wait = ~resp_available; //inserted here
 
-    assign instruction  = resp_fire ? i_imem_rdata : instruction_r; //inserted here
-    assign pc_to_decode = resp_fire ? pc : pc_to_decode_r; //inserted here
+    assign instruction  = (resp_fire && ~squash_resp) ? i_imem_rdata : ((~resp_fire && inst_valid_r && ~squash_resp) ? instruction_r : 32'h00000013); //inserted here
+    assign pc_to_decode = (resp_fire && ~squash_resp) ? pc : ((~resp_fire && inst_valid_r && ~squash_resp) ? pc_to_decode_r : 32'h00000000); //inserted here
 
     always @(posedge i_clk) begin
         if (i_rst) begin
@@ -56,9 +58,12 @@ module fetch #(
             pc_to_decode_r <= RESET_ADDR;    //inserted here
             inst_valid_r <= 1'b0;            //inserted here
             req_outstanding_r <= 1'b0;       //inserted here
+            busy_r <= 1'b0;
             redirect_pc_r <= RESET_ADDR;
             redirect_pending_r <= 1'b0;
         end else begin
+            busy_r <= i_busy;
+
             if (branch_taken) begin
                 // Hold redirect target until fetch can actually advance PC.
                 redirect_pc_r <= next_pc;

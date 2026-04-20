@@ -388,7 +388,7 @@ module hart #(
     wire branch_taken;
 
     wire redirect_X;
-    assign redirect_X = valid_D_X_r & (Jump_D_X_r | branch_taken);
+    assign redirect_X = valid_D_X_r & ~stall_M_X & (Jump_D_X_r | branch_taken);
 
     wire flush;
     assign flush = redirect_X;
@@ -648,12 +648,12 @@ module hart #(
         i_rst,
         i_clk,
         icache_busy,
-        icache_rdata, 
+        icache_rdata,
         next_PC_to_fetch,
         stall_M_X_D,     //inserted here
         redirect_X,
         imem_raddr,      // these feed INTO the cache
-        imem_ren, 
+        imem_ren,
         fetch_wait,      //inserted here
         PC_F_D_w,
         instruction_w
@@ -806,7 +806,7 @@ module hart #(
         .o_busy      (icache_busy),
         .o_res_rdata (icache_rdata)
     );
-    
+
     cache dcache(
         // inputs from hart to cache
         i_clk, i_rst, i_dmem_ready,

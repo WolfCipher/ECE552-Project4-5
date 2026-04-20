@@ -105,7 +105,8 @@ module cache (
     reg [T-1:0] miss_tag_r = {T{1'b0}};
     reg         miss_way_r = 1'b0;
     reg [1:0]   miss_word_r = 2'b00;
-    reg [1:0]   fill_word_r = 2'b00;
+    reg [2:0]   send_word_r = 3'd0;
+    reg [2:0]   recv_word_r = 3'd0;
 
     // Break address up
     // split into parts
@@ -251,6 +252,8 @@ module cache (
             resp_seen_r <= 1'b0;
             ren <= 1'b0;
             wen <= 1'b0;
+            send_word_r <= 3'd0;
+            recv_word_r <= 3'd0;
         end
     end
 
@@ -286,11 +289,11 @@ module cache (
     // then keep the stage stalled until the corresponding i_mem_valid arrives.
     wire load_active;
     assign load_active = (i_req_ren && !hit) || (i_req_wen);
-    assign o_mem_addr = ren ? {addr_r[31:4], fill_word_r, 2'b00} : addr_r; // line fill on read miss
+    assign o_mem_addr = ren ? {addr_r[31:4], send_word_r[1:0], 2'b00} : addr_r; // line fill on read miss
     assign o_mem_wdata = wdata_r;
-    assign o_mem_ren = ren & ~req_sent_r & i_mem_ready;
+    assign o_mem_ren = ren & (send_word_r < 3'd4) & i_mem_ready;
     assign o_mem_wen = wen & ~req_sent_r & i_mem_ready;
-    // Assert busy combinationally on a new miss, and hold it while servicing.
+    // Assert busy immediately on a new miss and hold it while servicing.
     assign o_busy = busy | ((i_req_ren || i_req_wen) && !hit);
     wire [31:0] miss_data_0 = (new_lru == 1'b1) ? (ren ? i_mem_rdata : wdata_r) : datas0[req_set][req_word]; // data to update cache with on a miss, either from memory for a load, or the new data for a store
     wire [31:0] miss_data_1 = (new_lru == 1'b0) ? (ren ? i_mem_rdata : wdata_r) : datas1[req_set][req_word];
@@ -307,7 +310,8 @@ module cache (
                     // Start of a new request: clear previous transaction markers.
                     req_sent_r <= 1'b0;
                     resp_seen_r <= 1'b0;
-                    fill_word_r <= 2'b00;
+                    send_word_r <= 3'd0;
+                    recv_word_r <= 3'd0;
                 end
                 if (i_req_ren && !hit && !busy) begin
                     miss_set_r <= req_set;
@@ -332,15 +336,18 @@ module cache (
             end
             if (o_mem_ren || o_mem_wen) begin
                 req_sent_r <= 1'b1;
+                if (o_mem_ren) begin
+                    send_word_r <= send_word_r + 3'd1;
+                end
             end
-            if (req_sent_r && ren && i_mem_valid) begin
+            if (ren && i_mem_valid) begin
                 if (miss_way_r == 1'b0) begin
-                    datas0[miss_set_r][fill_word_r] <= i_mem_rdata;
+                    datas0[miss_set_r][recv_word_r[1:0]] <= i_mem_rdata;
                 end else begin
-                    datas1[miss_set_r][fill_word_r] <= i_mem_rdata;
+                    datas1[miss_set_r][recv_word_r[1:0]] <= i_mem_rdata;
                 end
 
-                if (fill_word_r == 2'b11) begin
+                if (recv_word_r == 3'd3) begin
                     resp_seen_r <= 1'b1;
                     busy <= 1'b0;
                     ren <= 1'b0;
@@ -355,8 +362,7 @@ module cache (
                         tags1[miss_set_r] <= miss_tag_r;
                     end
                 end else begin
-                    fill_word_r <= fill_word_r + 2'b01;
-                    req_sent_r <= 1'b0;
+                    recv_word_r <= recv_word_r + 3'd1;
                 end
             end
             if (busy && req_sent_r && wen && !ren) begin
