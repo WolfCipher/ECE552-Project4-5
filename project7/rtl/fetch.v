@@ -29,7 +29,6 @@ module fetch #(
     assign o_imem_raddr = pc;
 
     assign o_imem_ren =
-        ~i_busy &
         ~req_outstanding_r &
         ~inst_valid_r &
         ~i_stall_F;
@@ -40,7 +39,9 @@ module fetch #(
     wire resp_fire;
     wire resp_available;
     assign squash_resp = branch_taken | redirect_pending_r;
-    assign resp_fire = req_outstanding_r & ~i_busy;
+    // Response can come either from a same-cycle hit request or completion of
+    // an outstanding miss request.
+    assign resp_fire = ~i_busy & (o_imem_ren | req_outstanding_r);
     assign resp_available = (resp_fire & ~squash_resp) | inst_valid_r;
 
     assign o_fetch_wait = ~resp_available; //inserted here

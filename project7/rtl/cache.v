@@ -290,7 +290,8 @@ module cache (
     assign o_mem_wdata = wdata_r;
     assign o_mem_ren = ren & ~req_sent_r & i_mem_ready;
     assign o_mem_wen = wen & ~req_sent_r & i_mem_ready;
-    assign o_busy = busy; //load_active & ~resp_seen_r & !hit;
+    // Assert busy combinationally on a new miss, and hold it while servicing.
+    assign o_busy = busy | ((i_req_ren || i_req_wen) && !hit);
     wire [31:0] miss_data_0 = (new_lru == 1'b1) ? (ren ? i_mem_rdata : wdata_r) : datas0[req_set][req_word]; // data to update cache with on a miss, either from memory for a load, or the new data for a store
     wire [31:0] miss_data_1 = (new_lru == 1'b0) ? (ren ? i_mem_rdata : wdata_r) : datas1[req_set][req_word];
 
