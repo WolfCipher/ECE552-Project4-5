@@ -31,10 +31,10 @@ module fetch #(
 
     assign o_imem_ren =
         i_imem_ready &
-        ~req_outstanding_r &
+        ~(req_outstanding_r & ~i_imem_valid) &
         ~inst_valid_r &
-        ~i_stall_F; //inserted here
-
+        ~i_stall_F;
+        
     // A newly returned instruction can be forwarded immediately to decode,
     // except for wrong-path responses being squashed by redirect.
     wire squash_resp;

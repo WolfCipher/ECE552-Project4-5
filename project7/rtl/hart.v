@@ -170,6 +170,8 @@ module hart #(
     wire [31:0] target_addr_D_X_w; // PC + target_addr
     wire [31:0] next_PC_M_W_w, next_PC_W_F; // output of branch/jump logic
 
+    assign next_PC_M_W_w = (Jump_X_M_r || Branch_X_M_r) ? ALU_X_M_r : PC4_X_M_r;
+
     // Mux Signals
     reg isJALR_D_X_r, isJALR_X_M_r;
     reg Jump_D_X_r, Jump_X_M_r, Jump_M_W_r;
@@ -252,12 +254,16 @@ module hart #(
     // assign o_dmem_wdata = dmem_wdata_ex_r;
     // assign o_dmem_wen   = dmem_wen_ex_r;
 
+    wire dreq_ren_w, o_dbusy;
+
     wire stall_F, stall_D, stall_X, stall_M;
     wire stall_M_X, stall_M_X_D, stall_M_X_D_F;
 
     assign stall_M_X = stall_M | stall_X;
     assign stall_M_X_D = stall_M_X | stall_D;
     assign stall_M_X_D_F = stall_M_X_D | stall_F; //inserted here
+
+    assign o_dmem_mask = 4'b1111;
 
     wire stall_D_from_F; //inserted here
     assign stall_D_from_F = stall_M_X | stall_F; //inserted here
@@ -353,9 +359,11 @@ module hart #(
     assign o_retire_dmem_mask = dmem_mask_W_F;
     assign o_retire_dmem_wdata = dmem_wdata_W_F;
     assign o_retire_dmem_rdata = dmem_rdata_W_F;
+    assign stall_X = 1'b0;
+    assign stall_M = valid_X_M_r & (MemRead_X_M_r | dmem_wen_ex_r) & o_dbusy;
 
     // cache signals
-    wire i_dreq_ren, o_dbusy;
+
     wire [31:0] o_dres_rdata;
 
     // HALT
@@ -388,7 +396,13 @@ module hart #(
     wire [31:0] redirect_target_X;
     assign redirect_target_X = isJALR_D_X_r ? {target_addr_D_X_w[31:1], 1'b0} : target_addr_D_X_w;
 
-    assign next_PC_to_fetch = redirect_X ? redirect_target_X : (o_imem_raddr + 32'd4);
+    // cache stuff
+    wire [31:0] imem_raddr;
+    wire        imem_ren;
+    wire        icache_busy;
+    wire [31:0] icache_rdata;
+
+    assign next_PC_to_fetch = redirect_X ? redirect_target_X : (imem_raddr + 32'd4);
     always @(posedge i_clk) begin
         if (i_rst) begin
             PC_F_D_r <= 32'd0;
@@ -630,21 +644,17 @@ module hart #(
         i_reg_write_en, i_reg_write_addr, i_reg_write_data
     );
 
-    // cache stuff
-    wire [31:0] imem_raddr;
-    wire        imem_ren;
-    wire        icache_busy;
-    wire [31:0] icache_rdata;
+
 
     cache icache (
         .i_clk       (i_clk),
         .i_rst       (i_rst),
         // backing memory side
-        .i_mem_ready (i_mem_ready),
-        .i_mem_rdata (i_mem_rdata),
-        .i_mem_valid (i_mem_valid),
-        .o_mem_addr  (o_mem_addr),
-        .o_mem_ren   (o_mem_ren),
+        .i_mem_ready (i_imem_ready),
+        .i_mem_rdata (i_imem_rdata),
+        .i_mem_valid (i_imem_valid),
+        .o_mem_addr  (o_imem_raddr),
+        .o_mem_ren   (o_imem_ren),
         .o_mem_wen   (),
         .o_mem_wdata (),
         // fetch side
@@ -721,6 +731,7 @@ module hart #(
         reg1_mem_forward, reg2_mem_forward
     );
 
+
     memory_student m (
         i_clk, stall_M,
         //i_dmem_ready,
@@ -735,7 +746,7 @@ module hart #(
         rd_waddr_X_M_r, RegWrite_X_M_r, IsUInstruct_X_M_r,
         uimm_X_M_r,
         Jump_M_W_w, MemtoReg_M_W_w, rd_waddr_M_W_w, RegWrite_M_W_w, IsUInstruct_M_W_w,
-        o_dres_rdata, i_dreq_ren, // cache interface
+        o_dres_rdata, dreq_ren_w, // cache interface
         halt_X_M_r, inst_X_M_r, trapD_X_M_r,
         rs1_rdata_X_M_r, rs2_rdata_X_M_r,
         rs1_raddr_X_M_r, rs2_raddr_X_M_r,
@@ -809,7 +820,7 @@ module hart #(
         // outputs from cache to hart
         o_dbusy,
         // inputs from hart modules to cache for requests
-        dmem_addr_r, i_dreq_ren, dmem_wen_ex_r, dmem_mask_r, dmem_wdata_ex_r,
+        dmem_addr_r, dreq_ren_w, dmem_wen_ex_r, dmem_mask_r, dmem_wdata_ex_r,
         // outputs from cache to hart for read responses
         o_dres_rdata
     );

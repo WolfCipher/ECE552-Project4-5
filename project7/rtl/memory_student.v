@@ -104,6 +104,7 @@ module memory_student(
                 read_req_sent_r <= 1'b1;
             end
             if (!busy/*i_dmem_valid && read_req_sent_r*/) begin
+                read_req_sent_r  <= 1'b0;   // add this line
                 read_data_r <= i_dmem_rdata;
                 read_resp_seen_r <= 1'b1;
             end
