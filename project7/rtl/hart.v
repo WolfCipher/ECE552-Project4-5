@@ -159,19 +159,6 @@ module hart #(
     output wire [31:0] o_retire_next_pc
 );
     
-    // PC signals
-    reg [31:0] PC_F_D_r, PC_D_X_r, PC_X_M_r, PC_M_W_r; // before adding 4
-    reg [31:0] PC4_D_X_r, PC4_X_M_r, PC4_M_W_r; // after adding 4
-    reg [31:0] target_addr_D_X_r; // PC + target_addr
-    reg [31:0] next_PC_M_W_r; // output of branch/jump logic
-    
-    wire [31:0] PC_F_D_w, PC_D_X_w, PC_X_M_w, PC_M_W_w; // before adding 4
-    wire [31:0] PC4_D_X_w, PC4_X_M_w, PC4_M_W_w; // after adding 4
-    wire [31:0] target_addr_D_X_w; // PC + target_addr
-    wire [31:0] next_PC_M_W_w, next_PC_W_F; // output of branch/jump logic
-
-    assign next_PC_M_W_w = (Jump_X_M_r || Branch_X_M_r) ? ALU_X_M_r : PC4_X_M_r;
-
     // Mux Signals
     reg isJALR_D_X_r, isJALR_X_M_r;
     reg Jump_D_X_r, Jump_X_M_r, Jump_M_W_r;
@@ -199,6 +186,28 @@ module hart #(
     wire IsUInstruct_D_X_w, IsUInstruct_X_M_w, IsUInstruct_M_W_w;
     wire ALUSrc_D_X_w;
 
+    // ALU result, U type result, memory result
+    reg [31:0] ALU_X_M_r, ALU_M_W_r;
+    reg [31:0] uimm_X_M_r, uimm_M_W_r;
+    reg [31:0] mem_read_M_W_r;
+
+    wire [31:0] ALU_X_M_w, ALU_M_W_w;
+    wire [31:0] uimm_X_M_w, uimm_M_W_w;
+    wire [31:0] mem_read_M_W_w;
+
+    // PC signals
+    reg [31:0] PC_F_D_r, PC_D_X_r, PC_X_M_r, PC_M_W_r; // before adding 4
+    reg [31:0] PC4_D_X_r, PC4_X_M_r, PC4_M_W_r; // after adding 4
+    reg [31:0] target_addr_D_X_r; // PC + target_addr
+    reg [31:0] next_PC_M_W_r; // output of branch/jump logic
+    
+    wire [31:0] PC_F_D_w, PC_D_X_w, PC_X_M_w, PC_M_W_w; // before adding 4
+    wire [31:0] PC4_D_X_w, PC4_X_M_w, PC4_M_W_w; // after adding 4
+    wire [31:0] target_addr_D_X_w; // PC + target_addr
+    wire [31:0] next_PC_M_W_w, next_PC_W_F; // output of branch/jump logic
+
+    assign next_PC_M_W_w = (Jump_X_M_r || Branch_X_M_r) ? ALU_X_M_r : PC4_X_M_r;
+
     // Destination Address
     reg [4:0] rd_waddr_D_X_r, rd_waddr_X_M_r, rd_waddr_M_W_r;
     wire [4:0] rd_waddr_D_X_w, rd_waddr_X_M_w, rd_waddr_M_W_w;
@@ -211,15 +220,6 @@ module hart #(
     assign i_reg_write_en = wb_en;
     assign i_reg_write_addr = wb_addr;
     assign i_reg_write_data = wb_data;
-
-    // ALU result, U type result, memory result
-    reg [31:0] ALU_X_M_r, ALU_M_W_r;
-    reg [31:0] uimm_X_M_r, uimm_M_W_r;
-    reg [31:0] mem_read_M_W_r;
-
-    wire [31:0] ALU_X_M_w, ALU_M_W_w;
-    wire [31:0] uimm_X_M_w, uimm_M_W_w;
-    wire [31:0] mem_read_M_W_w;
 
     // Signals just between decode and execute stages
     reg [31:0] reg1_r, reg2_r, imm_r;
@@ -644,34 +644,10 @@ module hart #(
         i_reg_write_en, i_reg_write_addr, i_reg_write_data
     );
 
-
-
-    cache icache (
-        .i_clk       (i_clk),
-        .i_rst       (i_rst),
-        // backing memory side
-        .i_mem_ready (i_imem_ready),
-        .i_mem_rdata (i_imem_rdata),
-        .i_mem_valid (i_imem_valid),
-        .o_mem_addr  (o_imem_raddr),
-        .o_mem_ren   (o_imem_ren),
-        .o_mem_wen   (),
-        .o_mem_wdata (),
-        // fetch side
-        .i_req_addr  (imem_raddr),
-        .i_req_ren   (imem_ren),
-        .i_req_wen   (1'b0),
-        .i_req_mask  (4'b1111),
-        .i_req_wdata (32'b0),
-        .o_busy      (icache_busy),
-        .o_res_rdata (icache_rdata)
-    );
-
     fetch #(RESET_ADDR) fetch_inst (
         i_rst,
         i_clk,
-        ~icache_busy,    // ready when cache not busy
-        ~icache_busy,    // valid when cache not busy
+        icache_busy,
         icache_rdata, 
         next_PC_to_fetch,
         stall_M_X_D,     //inserted here
@@ -810,6 +786,27 @@ module hart #(
         reg2_mem_forward
     );
 
+    cache icache (
+        .i_clk       (i_clk),
+        .i_rst       (i_rst),
+        // backing memory side
+        .i_mem_ready (i_imem_ready),
+        .i_mem_rdata (i_imem_rdata),
+        .i_mem_valid (i_imem_valid),
+        .o_mem_addr  (o_imem_raddr),
+        .o_mem_ren   (o_imem_ren),
+        .o_mem_wen   (),
+        .o_mem_wdata (),
+        // fetch side
+        .i_req_addr  (imem_raddr),
+        .i_req_ren   (imem_ren),
+        .i_req_wen   (1'b0),
+        .i_req_mask  (4'b1111),
+        .i_req_wdata (32'b0),
+        .o_busy      (icache_busy),
+        .o_res_rdata (icache_rdata)
+    );
+    
     cache dcache(
         // inputs from hart to cache
         i_clk, i_rst, i_dmem_ready,

@@ -5,8 +5,7 @@ module fetch #(
 ) (
     input  wire        i_rst,
     input  wire        i_clk,
-    input  wire        i_imem_ready,   //inserted here
-    input  wire        i_imem_valid,   //inserted here
+    input  wire        i_busy,
     input  wire [31:0] i_imem_rdata,
     input  wire [31:0] next_pc,
     input  wire        i_stall_F,      //inserted here
@@ -30,22 +29,24 @@ module fetch #(
     assign o_imem_raddr = pc;
 
     assign o_imem_ren =
-        i_imem_ready &
-        ~(req_outstanding_r & ~i_imem_valid) &
+        ~i_busy &
+        ~req_outstanding_r &
         ~inst_valid_r &
         ~i_stall_F;
-        
+
     // A newly returned instruction can be forwarded immediately to decode,
     // except for wrong-path responses being squashed by redirect.
     wire squash_resp;
+    wire resp_fire;
     wire resp_available;
     assign squash_resp = branch_taken | redirect_pending_r;
-    assign resp_available = (i_imem_valid & ~squash_resp) | inst_valid_r;
+    assign resp_fire = req_outstanding_r & ~i_busy;
+    assign resp_available = (resp_fire & ~squash_resp) | inst_valid_r;
 
     assign o_fetch_wait = ~resp_available; //inserted here
 
-    assign instruction  = i_imem_valid ? i_imem_rdata : instruction_r; //inserted here
-    assign pc_to_decode = i_imem_valid ? pc : pc_to_decode_r; //inserted here
+    assign instruction  = resp_fire ? i_imem_rdata : instruction_r; //inserted here
+    assign pc_to_decode = resp_fire ? pc : pc_to_decode_r; //inserted here
 
     always @(posedge i_clk) begin
         if (i_rst) begin
@@ -67,7 +68,8 @@ module fetch #(
                 req_outstanding_r <= 1'b1;   //inserted here
             end
 
-            if (i_imem_valid) begin
+            // Handle response with squashing
+            if (resp_fire) begin
                 req_outstanding_r <= 1'b0;       //inserted here
                 if (squash_resp) begin
                     // Drop the wrong-path response and redirect fetch PC.
